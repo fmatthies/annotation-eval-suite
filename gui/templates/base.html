@@ -1,0 +1,117 @@
+<html>
+     <head>
+         {% if title %}
+         <title>Annotation: {{ title }}</title>
+         {% else %}
+         <title>Annotation: FORGET TO PUT A TITLE</title>
+         {% endif %}
+         <link rel= "stylesheet" type= "text/css" href= "{{ url_for('static',filename='styles/main.css') }}">
+         <link rel= "stylesheet" type= "text/css" href= "{{ url_for('static',filename='styles/brat/style-vis.css') }}"/>
+         <script type="text/javascript" src="{{ url_for('static',filename='js/lib/head.load.min.js') }}"></script>
+
+    </head>
+    <body>
+        <script type="text/javascript">
+
+            var serverLocation = 'http://127.0.0.1:5000';
+            head.js(
+                // External libraries
+                serverLocation + '/static/js/lib/jquery.min.js',
+                serverLocation + '/static/js/lib/jquery.svg.min.js',
+                serverLocation + '/static/js/lib/jquery.svgdom.min.js',
+                serverLocation + '/static/js/lib/socket.io.js',
+
+                // brat helper modules
+                serverLocation + '/static/js/brat/configuration.js',
+                serverLocation + '/static/js/brat/util.js',
+                serverLocation + '/static/js/brat/annotation_log.js',
+                serverLocation + '/static/js/lib/webfont.js',
+
+                // brat modules
+                serverLocation + '/static/js/brat/dispatcher.js',
+                serverLocation + '/static/js/brat/url_monitor.js',
+                serverLocation + '/static/js/brat/visualizer.js',
+            );
+
+            var webFontURLs = [
+                // serverLocation + '/static/fonts/Astloch-Bold.ttf',
+                serverLocation + '/static/fonts/Liberation_Sans-Regular.ttf',
+                serverLocation + '/static/fonts/PT_Sans-Caption-Web-Regular.ttf'
+            ];
+
+            var collData = {
+                entity_types: [
+                    {
+                        type   : 'Medication',
+                        /* The labels are used when displaying the annotion, in this case
+                            we also provide a short-hand "Per" for cases where
+                            abbreviations are preferable */
+                        labels : ['Medication'],
+                        // Blue is a nice colour for a person?
+                        bgColor: '#ff0000',
+                        // Use a slightly darker version of the bgColor for the border
+                        borderColor: 'darken'
+                    },
+                    {
+                        type   : 'Dose',
+                        /* The labels are used when displaying the annotion, in this case
+                            we also provide a short-hand "Per" for cases where
+                            abbreviations are preferable */
+                        labels : ['Dose'],
+                        // Blue is a nice colour for a person?
+                        bgColor: '#66ccff',
+                        // Use a slightly darker version of the bgColor for the border
+                        borderColor: 'darken'
+                    },
+                    {
+                        type   : 'Modus',
+                        /* The labels are used when displaying the annotion, in this case
+                            we also provide a short-hand "Per" for cases where
+                            abbreviations are preferable */
+                        labels : ['Modus'],
+                        // Blue is a nice colour for a person?
+                        bgColor: '#00cc00',
+                        // Use a slightly darker version of the bgColor for the border
+                        borderColor: 'darken'
+                    },
+                    {
+                        type   : 'Frequency',
+                        /* The labels are used when displaying the annotion, in this case
+                            we also provide a short-hand "Per" for cases where
+                            abbreviations are preferable */
+                        labels : ['Frequency'],
+                        // Blue is a nice colour for a person?
+                        bgColor: '#ffcc00',
+                        // Use a slightly darker version of the bgColor for the border
+                        borderColor: 'darken'
+                    },
+                    {
+                        type   : 'Duration',
+                        /* The labels are used when displaying the annotion, in this case
+                            we also provide a short-hand "Per" for cases where
+                            abbreviations are preferable */
+                        labels : ['Duration'],
+                        // Blue is a nice colour for a person?
+                        bgColor: '#cccccc',
+                        // Use a slightly darker version of the bgColor for the border
+                        borderColor: 'darken'
+                    },
+                    {
+                        type   : 'Reason',
+                        /* The labels are used when displaying the annotion, in this case
+                            we also provide a short-hand "Per" for cases where
+                            abbreviations are preferable */
+                        labels : ['Reason'],
+                        // Blue is a nice colour for a person?
+                        bgColor: '#990066',
+                        // Use a slightly darker version of the bgColor for the border
+                        borderColor: 'darken'
+                    }
+                ]
+            };
+        </script>
+        <div>Annotation: <a href="/index">Home</a> -- <a href="/index/reset">New Comparison</a></div>
+        <hr>
+        {% block content %} {% endblock %}
+    </body>
+</html>

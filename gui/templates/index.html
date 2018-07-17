@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block content %}
+    {% if documents %}
+    <h2>Document Index</h2>
+    <ul>
+        {% for document in documents %}
+        <li><a href="/documents/{{ document }}/results">{{ document }}</a></li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <h2>Comparison Set Up</h2>
+    <form action="" method="post" name="fileloader">
+        {{ form.hidden_tag() }}
+        Please give a path to the root folder
+        <p>{{ form.root_dir }}</p>
+        Please give a comma separated list of annotator names
+        <p>{{ form.anno_sets }}</p>
+        <p><input type="submit" value="Load Files"></p>
+    </form>
+    {% endif %}
+{% endblock %}

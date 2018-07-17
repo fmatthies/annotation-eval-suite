@@ -1,0 +1,43 @@
+{% extends "document_base.html" %}
+
+{% block result_content %}
+
+{% endblock %}
+
+{% block sentence_content %}
+    <script>
+        var dispatchers = {};
+    </script>
+    {% for a in annotators %}
+        <div id="{{ a.0 }}">{{ a.1 }}</div>
+        <br><br>
+        <script>
+            head(function() {
+                dispatchers['dispatcher_{{ a.0 }}'] = Util.embed(
+                        // id of the div element where brat should embed the visualisations
+                        "{{ a.0 }}",
+                        // object containing collection data
+                        collData,
+                        // object containing document data
+                        {text: "", entities: []},
+                        // Array containing locations of the visualisation fonts
+                        webFontURLs
+                    );
+            });
+        </script>
+    {% endfor %}
+    {% for e in sentences._entities %}
+        <script>
+            head(function() {
+                var docData = {
+                    // Our text of choice
+                    text     : "{{sentences._sentence|safe}}",
+                    // The entities entry holds all entity annotations
+                    entities : {{e.entities|safe}},
+                };
+                var d = dispatchers['dispatcher_{{ e.id }}']
+                d.post('requestRenderData', [$.extend({}, docData)]);
+            });
+        </script>
+    {% endfor %}
+{% endblock %}

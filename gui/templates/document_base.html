@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block content %}
+    {% if document._id %}
+        <form action = "/documents/{{ document._id }}/results" method = "POST">
+            <input type="submit" name="submit" value="<< previous">
+            <input type="submit" name="submit" value="next >>">
+            <h2>Document: {{ document._id }}</h2>
+            {% if result %}
+                Measurement:
+                <select id="measure-type" name="measure-type">
+                    <option value="strict">Strict</option>
+                    <option value="approximate">Approximate</option>
+                    <option value="one_all" selected>One vs. All</option>
+                </select>
+                <br><br>
+                Trigger Type:
+                <select id="trigger-type" name="trigger-type">
+                    <option value="medication" selected>Medication</option>
+                    <option value="dose">Dose</option>
+                    <option value="modus">Modus</option>
+                    <option value="frequency">Frequency</option>
+                    <option value="duration">Duration</option>
+                    <option value="reason">Reason</option>
+                </select>
+                <br><br>
+                <div id="table-result">
+                    {{ result._table|safe }}
+                </div>
+                {% block result_content %} {% endblock %}
+            {% else %}
+                No Result
+            {% endif %}
+        </form>
+        {% if sentences %}
+            <h3>Sentences:</h3>
+            <div id="sentence-vis">
+                <button id="prev-sent"> << </button>
+                <button id="next-sent"> >> </button>
+                <br><br>
+                {% block sentence_content %} {% endblock %}
+            </div>
+        {% else %}
+            No Sentences
+        {% endif %}
+        <script>
+            head(function() {
+                var socket = io.connect('http://' + document.domain + ':' + location.port);
+
+                // dispatches new data to the sentence visualizers
+                socket.on('vis sentence', function(data) {
+                    var sentence = data._sentence
+                    var entities = data._entities
+                    $(entities).each(function () {
+                        var that = $(this)[0]
+                        var docData = {
+                            // Our text of choice
+                            text     : sentence,
+                            // The entities entry holds all entity annotations
+                            entities : that.entities,
+                        };
+                        var d = dispatchers['dispatcher_' + that.id]
+                        d.post('requestRenderData', [$.extend({}, docData)]);
+                    });
+                });
+
+                // sends new table data to table div
+                socket.on('ch table', function(data) {
+                    $('#table-result').html(data)
+                });
+
+                // triggers the 'cycle sentence' function in 'views.py'
+                $('#sentence-vis').on('click', '#next-sent', function(event) {
+                    socket.emit('cycle sentences', "next");
+                });
+                $('#sentence-vis').on('click', '#prev-sent', function(event) {
+                    socket.emit('cycle sentences', "previous");
+                });
+
+                // triggers the 'change table' function in 'views.py'
+                $('#measure-type').change(function() {
+                    socket.emit('change table',
+                     { 'mtype': this.value,
+                      'ttype': $('#trigger-type').val() });
+                });
+                $('#trigger-type').change(function() {
+                    socket.emit('change table',
+                     { 'mtype': $('#measure-type').val(),
+                      'ttype': this.value});
+                });
+            });
+        </script>
+    {% else %}
+        <h2>Document: {{ document }}</h2>
+        No such Document
+    {% endif %}
+{% endblock %}
