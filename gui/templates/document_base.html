@@ -12,7 +12,17 @@
                     <option value="approximate">Approximate</option>
                     <option value="one_all" selected>One vs. All</option>
                 </select>
-                <br><br>
+                <table id="measure-settings" style="visibility: visible;">
+                    <tr>
+                        <td></td>
+                        <td>Threshold:</td>
+                        <td style="width:25px; height:15px"><input id="threshold" name="value" style="width:25px; height:15px"></td>
+                        <td>Boundary:</td>
+                        <td style="width:25px; height:15px"><input id="boundary" name="value" style="width:25px; height:15px"></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                </table>
                 Trigger Type:
                 <select id="trigger-type" name="trigger-type">
                     <option value="medication" selected>Medication</option>
@@ -45,6 +55,8 @@
         <script>
             head(function() {
                 var socket = io.connect('http://' + document.domain + ':' + location.port);
+                var threshold = $("#threshold").spinner();
+                var boundary = $("#boundary").spinner();
 
                 // dispatches new data to the sentence visualizers
                 socket.on('vis sentence', function(data) {
@@ -81,6 +93,12 @@
                     socket.emit('change table',
                      { 'mtype': this.value,
                       'ttype': $('#trigger-type').val() });
+                    console.log($('#measure-settings'))
+                    if (this.value === "one_all") {
+                        $('#measure-settings').css('visibility', 'visible');
+                    } else {
+                        $('#measure-settings').css('visibility', 'hidden');
+                    }
                 });
                 $('#trigger-type').change(function() {
                     socket.emit('change table',

@@ -1,14 +1,17 @@
 # -*- coding: utf-8 -*-
 import operator
+import os
+
 from flask import render_template, redirect, request
 from flask_socketio import emit
-from gui import gui_app, socketio
+
 from compare import comparison
+from gui import gui_app, socketio
 from .forms import FileChooser
 
 SET_LIST = ["data1/alt", "data2"]
 ROOT_STRING = "test_resources/"
-FINDEX_STRING = "agreement_index"
+FINDEX_STRING = "index"
 
 cbatch = None
 doc_list = None
@@ -25,10 +28,11 @@ def _load(_root, _sets):
         print("[DEBUG] Loading Batch Comparison for the first time")
         _sets = [_s.rstrip() for _s in [_s.lstrip() for _s in _sets.split(",")]]
         try:
-            cbatch = comparison.BatchComparison(_root + FINDEX_STRING, _sets, _root)
+            cbatch = comparison.BatchComparison(os.path.join(_root, FINDEX_STRING), _sets, _root)
             doc_list = sorted([cbatch.get_comparison_obj(doc).get_id() for doc in cbatch.doc_iterator()])
             return "load:successful"
-        except:
+        except Exception as e:
+            print(e)
             return _root, _sets
     return "load:successful"
 
@@ -44,7 +48,8 @@ def _show_first(_doc):
 
     vis = _doc.sent_compare_generator()
     return ({'_type': 'first',
-             '_table': _get_table('Medication', 'one_all')},
+             '_table': _get_table('Medication', 'one_all'),
+             '_measure': 'one_all'},
             _cycle_sentence("next"))
 
 

@@ -5,10 +5,15 @@
          {% else %}
          <title>Annotation: FORGET TO PUT A TITLE</title>
          {% endif %}
-         <link rel= "stylesheet" type= "text/css" href= "{{ url_for('static',filename='styles/main.css') }}">
          <link rel= "stylesheet" type= "text/css" href= "{{ url_for('static',filename='styles/brat/style-vis.css') }}"/>
+         <link rel= "stylesheet" type= "text/css" href= "{{ url_for('static',filename='styles/jquery-ui/jquery-ui.min.css') }}"/>
+         <link rel= "stylesheet" type= "text/css" href= "{{ url_for('static',filename='styles/jquery-ui/jquery-ui.structure.min.css') }}"/>
+         <link rel= "stylesheet" type= "text/css" href= "{{ url_for('static',filename='styles/jquery-ui/jquery-ui.theme.min.css') }}"/>
+         <link rel= "stylesheet" type= "text/css" href= "{{ url_for('static',filename='styles/main.css') }}">
          <script type="text/javascript" src="{{ url_for('static',filename='js/lib/head.load.min.js') }}"></script>
-
+         <style>
+            .ui-widget { font-size: 0.85em; }
+         </style>
     </head>
     <body>
         <script type="text/javascript">
@@ -19,6 +24,7 @@
                 serverLocation + '/static/js/lib/jquery.min.js',
                 serverLocation + '/static/js/lib/jquery.svg.min.js',
                 serverLocation + '/static/js/lib/jquery.svgdom.min.js',
+                serverLocation + '/static/js/lib/jquery-ui.min.js',
                 serverLocation + '/static/js/lib/socket.io.js',
 
                 // brat helper modules
