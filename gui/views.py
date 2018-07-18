@@ -48,7 +48,7 @@ def _show_first(_doc):
 
     vis = _doc.sent_compare_generator()
     return ({'_type': 'first',
-             '_table': _get_table('Medication', 'one_all'),
+             '_table': _get_table('Medication', 'one_all', _threshold=0, _boundary=0),
              '_measure': 'one_all'},
             _cycle_sentence("next"))
 
@@ -84,12 +84,13 @@ def _cycle_sentence(_direction):
             "_entities": []}
 
 
-def _get_table(_trigger_type, _measure_type):
+def _get_table(_trigger_type, _measure_type, _threshold, _boundary):
     global cbatch
     global current_doc
     _doc = cbatch.get_comparison_obj(document=current_doc)
     if _measure_type == "one_all":
-        return _doc.return_agreement_scores(trigger=_trigger_type, match_type=_measure_type).to_html()
+        return _doc.return_agreement_scores(trigger=_trigger_type, match_type=_measure_type,
+                                            threshold=_threshold, boundary=_boundary).to_html()
     return (_doc.return_agreement_scores(
         trigger=_trigger_type, match_type=_measure_type)[["all_fscore", "all_precision", "all_recall"]]).to_html()
 
@@ -106,10 +107,13 @@ def cycle_sentences(direction):
 
 
 @socketio.on('change table')
-def change_table(types):
-    _ttype = types.get('ttype')
-    _mtype = types.get('mtype')
-    _table_result = _get_table(_ttype, _mtype)
+def change_table(tvalues):
+    _ttype = tvalues.get('ttype')
+    _mtype = tvalues.get('mtype')
+    _threshold = tvalues.get('threshold')
+    _boundary = tvalues.get('boundary')
+    print("measurement: {}, trigger: {}, threshold: {}, boundary: {}".format(_mtype, _ttype, _threshold, _boundary))
+    _table_result = _get_table(_ttype, _mtype, _threshold, _boundary)
     emit('ch table', _table_result)
 
 

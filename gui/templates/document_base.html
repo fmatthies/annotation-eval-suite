@@ -16,11 +16,11 @@
                     <tr>
                         <td></td>
                         <td>Threshold:</td>
-                        <td style="width:25px; height:15px"><input id="threshold" name="value" style="width:25px; height:15px"></td>
+                        <td style="width:25px; height:15px"><input id="threshold" name="value" style="width:25px; height:15px" readonly></td>
                         <td>Boundary:</td>
-                        <td style="width:25px; height:15px"><input id="boundary" name="value" style="width:25px; height:15px"></td>
+                        <td style="width:25px; height:15px"><input id="boundary" name="value" style="width:25px; height:15px" readonly></td>
                         <td></td>
-                        <td></td>
+                        <td style="height:25px"><button class="ui-button ui-widget ui-corner-all" id="setvalues" style="height:25px; font-size:9pt">Confirm</button></td>
                     </tr>
                 </table>
                 Trigger Type:
@@ -55,8 +55,37 @@
         <script>
             head(function() {
                 var socket = io.connect('http://' + document.domain + ':' + location.port);
+
+                // prevents button to call "submit"
+                // original line (as of jquery-ui doc) was:
+                //      $( ".widget input[type=submit], .widget a, .widget button" ).button();
+                //      $( "button, input, a" ).click( function( event ) {
+                $( function() {
+                    $( ".widget button" ).button();
+                    $( "button" ).click( function( event ) {
+                      event.preventDefault();
+                    } );
+                } );
+
+                // creates spinner and confirmation button
                 var threshold = $("#threshold").spinner();
                 var boundary = $("#boundary").spinner();
+                var annotators = {{ annotators|tojson }};
+
+                threshold.val(0);
+                threshold.spinner( "option", "min", 0 );
+                threshold.spinner( "option", "max", annotators.length - 1 );
+                boundary.val(0);
+                boundary.spinner( "option", "min", 0 );
+                boundary.spinner( "option", "max", annotators.length - 2 );
+
+                $( "#setvalues" ).on( "click", function() {
+                    socket.emit('change table',
+                        {'threshold': threshold.spinner("value"),
+                        'boundary': boundary.spinner("value"),
+                        'ttype': $('#trigger-type').val(),
+                        'mtype': "one_all"});
+                });
 
                 // dispatches new data to the sentence visualizers
                 socket.on('vis sentence', function(data) {
@@ -91,9 +120,10 @@
                 // triggers the 'change table' function in 'views.py'
                 $('#measure-type').change(function() {
                     socket.emit('change table',
-                     { 'mtype': this.value,
+                     {'threshold': threshold.spinner("value"),
+                      'boundary': boundary.spinner("value"),
+                      'mtype': this.value,
                       'ttype': $('#trigger-type').val() });
-                    console.log($('#measure-settings'))
                     if (this.value === "one_all") {
                         $('#measure-settings').css('visibility', 'visible');
                     } else {
@@ -102,7 +132,9 @@
                 });
                 $('#trigger-type').change(function() {
                     socket.emit('change table',
-                     { 'mtype': $('#measure-type').val(),
+                     {'threshold': threshold.spinner("value"),
+                      'boundary': boundary.spinner("value"),
+                      'mtype': $('#measure-type').val(),
                       'ttype': this.value});
                 });
             });
