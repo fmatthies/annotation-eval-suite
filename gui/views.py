@@ -6,6 +6,7 @@ from flask import render_template, redirect, request
 from flask_socketio import emit
 
 from compare import comparison
+from compare import properties
 from gui import gui_app, socketio
 from .forms import FileChooser
 
@@ -178,7 +179,8 @@ def resolve_request(doc_id="None"):
             print(sentences)
     print("[DEBUG] render documents page")
     return render_template('document.html', title='Document - ' + doc_id,
-                           document=doc, result=result, sentences=sentences, annotators=_get_annotators())
+                           document=doc, result=result, sentences=sentences, annotators=_get_annotators(),
+                           triggers=list(properties.AnnotationTypes.trigger_types()))
 
 
 @gui_app.route('/index/reset')

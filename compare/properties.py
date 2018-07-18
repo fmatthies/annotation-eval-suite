@@ -1,9 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import colorama
-
-#TODO replace all occurences of specific trigger strings with global variables which are defined in here!
-
 
 class AnnotationTypes(object):
 
@@ -47,18 +43,3 @@ class AnnotationTypes(object):
         """ all annotations"""
         return (AnnotationTypes.trigger_types().union(AnnotationTypes.relation_types()))\
             .union(AnnotationTypes.mod_types())
-
-
-class Colors:
-
-    @staticmethod
-    def color_map():
-        return {
-            'Anaphora': colorama.Fore.LIGHTGREEN_EX,
-            'Medication': colorama.Fore.RED,
-            'Dose': colorama.Fore.LIGHTCYAN_EX,
-            'Modus': colorama.Fore.GREEN,
-            'Reason': colorama.Fore.LIGHTMAGENTA_EX,
-            'Frequency': colorama.Fore.YELLOW,
-            'Duration': colorama.Fore.BLACK
-        }

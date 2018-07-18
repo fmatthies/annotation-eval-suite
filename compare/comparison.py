@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import colorama
 import operator
 import os
 
@@ -14,12 +13,11 @@ from re import sub as re_sub
 
 from . import annotationobjects
 from .properties import AnnotationTypes
-from .properties import Colors
 from .centroids import Centroids
 
-colorama.init()
 
 _match_types = ['strict', 'approximate', 'one_all']
+
 
 class BratRegEx(object):
     """
@@ -318,7 +316,7 @@ class AgreementScores(object):
     (i.e. no annotation for any of the defined triggers) are large and basically unknown.
     """
 
-    def __init__(self, comp_obj: 'Comparison', trigger: str = 'Medication') -> None:
+    def __init__(self, comp_obj: 'Comparison', trigger: str = list(AnnotationTypes.trigger_types())[0]) -> None:
         """
 
         :type trigger: object
@@ -505,7 +503,6 @@ class AgreementScores(object):
                 _df.at[_s1, "all_precision"] = round(_precision, 2)
                 _df.at[_s1, "all_recall"] = round(_recall, 2)
 
-
     def return_errors(self, match_type='strict', error_type='both', threshold=0, boundary=0, rm_whitespace: bool=True,
                       focus_annotator=None):
         # TODO: something's wrong with this function (?)
@@ -575,27 +572,12 @@ class Comparison(object):
         self._sets = [_set.split("/") for _set in slist]
         self._root_dir = froot
         self._documents = dict()
-        self._set_colors = dict()
         self._text = ""
         self._sent_splitter = BratRegEx()
         self._max_set_length = len(max([_set[0] for _set in self._sets]))
         self._agreement_score_dict = dict()
 
         self._load_documents()
-        self._assign_colors()
-
-    def _assign_colors(self) -> None:
-        """
-        :return: None
-        """
-        color = colorama.Back.BLUE
-        for _id in sorted(self._set_colors.keys()):
-            if color == colorama.Back.BLUE:
-                self._set_colors[_id] = colorama.Back.CYAN
-                color = colorama.Back.CYAN
-            else:
-                self._set_colors[_id] = colorama.Back.BLUE
-                color = colorama.Back.BLUE
 
     def _load_documents(self) -> None:
         """
@@ -605,7 +587,6 @@ class Comparison(object):
         for _sid in sorted(self._sets):
             doc = annotationobjects.Document(self._id, self._root_dir, os.path.join(*_sid))
             self._documents[_sid[0]] = doc
-            self._set_colors[_sid[0]] = colorama.Back.BLUE
         if doc:
             self._text = doc.get_text()
 
@@ -647,7 +628,7 @@ class Comparison(object):
         """
         return self._documents.get(dset, None)
 
-    def return_agreement_scores(self, trigger: str = 'Medication', match_type: str = 'strict',
+    def return_agreement_scores(self, trigger: str = list(AnnotationTypes.trigger_types())[0], match_type: str = 'strict',
                                 threshold: int=0, boundary: int=0, rm_whitespace: bool=True) -> Union[DataFrame, None]:
         """
         :param trigger: name of a specific trigger from properties.trigger_types() or 'All'
@@ -663,13 +644,13 @@ class Comparison(object):
         else:
             return None
 
-    def print_agreement_scores(self, trigger: str = 'Medication', match_type: str = 'strict',
+    def print_agreement_scores(self, trigger: str = list(AnnotationTypes.trigger_types())[0], match_type: str = 'strict',
                                threshold: int=0, boundary: int=0, rm_whitespace: bool=True) -> None:
         """
         :param trigger: name of a specific trigger from properties.trigger_types() or 'All'
-        :param match_type: 
+        :param match_type:
         :param threshold:
-        :param boundary: 
+        :param boundary:
         :return: None
         """
         # TODO: printings are too narrow in there expression, because "ags" can be None for several reasons now
@@ -688,65 +669,13 @@ class Comparison(object):
             print()
 
     def return_errors(self, threshold=0, boundary=0,
-                      trigger='Medication', match_type='strict', error_type='both',
+                      trigger=list(AnnotationTypes.trigger_types())[0], match_type='strict', error_type='both',
                       rm_whitespace=True, focus_annotator=None):
         if self._create_agreement_scores(trigger):
             _agreement = self._agreement_score_dict.get(trigger)
             if _agreement:
                 return _agreement.return_errors(match_type, error_type, threshold, boundary,
                                                 rm_whitespace=rm_whitespace, focus_annotator=focus_annotator)
-
-    def print_sentence_comparison(self) -> Generator:
-        """
-        Generator for printing each sentence in the document
-        that has some kind of annotation in it (color coded for displaying).
-        All sets are displayed below each other.
-
-        :return: generator object
-        """
-        # TODO: - sentence counter off at some point
-        _sent_nr = 0
-        for _offset in self._sent_splitter.split_sentence(self._text):
-            _begin, _end = _offset
-            _sent_nr += 1
-            _contains_ann = False
-            _sentence = self._text[_begin:_end]
-            _print_out = "Sentence.: {}\n{:<{width}}   {}".format(_sent_nr, "", _sentence, width=self._max_set_length)
-
-            for _id, _doc in sorted(self._documents.items(), key=operator.itemgetter(0)):
-                _print_out += ("\n" + self._set_colors[_id] + colorama.Fore.BLACK +
-                               "{:<{width}}:  ".format(_id, width=self._max_set_length))
-                _sent_vector = list()
-                _line_len = 0
-
-                for _trigger in _doc.get_triggers().values():
-                    _trig_span = _trigger.get_span()
-                    for _frag in range(len(_trig_span[0])):
-                        _trig_span_b = _trig_span[0][_frag]
-                        _trig_span_e = _trig_span[1][_frag]
-                        if _begin <= _trig_span_b <= _end:
-                            _contains_ann = True
-                            _sent_vector.append((_trig_span_b, _trig_span_e, _trigger.get_type()))
-                _sent_vector.sort()
-                _tmp = _begin
-                for _o in _sent_vector:
-                    _s_begin = _o[0] - _begin
-                    _s_end = _o[1] - _begin
-                    _type = _o[2]
-
-                    _empty_space = " " * (_o[0] - _tmp)
-                    _anno_chars = _sentence[_s_begin:_s_end]
-                    _line_len += (len(_empty_space) + len(_anno_chars))
-
-                    _print_out += _empty_space + Colors.color_map().get(_type, '') + _anno_chars + colorama.Fore.RESET
-
-                    _tmp = _o[1]
-
-                _print_out += " " * (len(_sentence) - _line_len)
-                _print_out += colorama.Back.RESET
-
-            if _contains_ann:
-                yield print(_print_out + colorama.Back.RESET)
 
     def sent_compare_generator(self) -> Generator:
         _sent_nr = 0
@@ -803,7 +732,7 @@ class Comparison(object):
         """
         return sorted([_s[0] for _s in self._sets])
 
-    def list_specific_trigger(self, trigger: str = 'Medication', _return: bool = False,
+    def list_specific_trigger(self, trigger: str = list(AnnotationTypes.trigger_types())[0], _return: bool = False,
                               counter=False) -> Union[set, 'Counter']:
         """
         :param trigger: name of a specific trigger from properties.trigger_types() or 'All'
@@ -881,7 +810,7 @@ class BatchComparison(object):
             _comp_obj = self._comparison[document]
             _comp_obj.print_general_statistics()
 
-    def return_agreement(self, document='All', trigger='Medication', match_type='strict', threshold=0, boundary=0,
+    def return_agreement(self, document='All', trigger=list(AnnotationTypes.trigger_types())[0], match_type='strict', threshold=0, boundary=0,
                         rm_whitespace=True):
         _sets = [_set.split("/")[0] for _set in self._sets]
         if document.lower() != 'all':
@@ -926,7 +855,7 @@ class BatchComparison(object):
 
             return _compl_df.round(2)
 
-    def print_agreement(self, document='All', trigger='Medication', match_type='strict', threshold=0, boundary=0,
+    def print_agreement(self, document='All', trigger=list(AnnotationTypes.trigger_types())[0], match_type='strict', threshold=0, boundary=0,
                         rm_whitespace=True):
         print()
         if document.lower() != "all":
@@ -940,7 +869,7 @@ class BatchComparison(object):
         print("### Entity/Event types: {}, Matching: {} ###".format(trigger.upper(), match_type))
         print(self.return_agreement(document, trigger, match_type, threshold, boundary, rm_whitespace))
 
-    def list_specific_trigger(self, document, trigger='Medication', _return=False, counter=False):
+    def list_specific_trigger(self, document, trigger=list(AnnotationTypes.trigger_types())[0], _return=False, counter=False):
         _comp = self._comparison.get(document, None)
         if _comp:
             if _return:
