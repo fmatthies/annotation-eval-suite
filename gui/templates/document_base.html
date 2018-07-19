@@ -1,49 +1,47 @@
 {% extends "base.html" %}
 {% block content %}
     {% if document._id %}
-        <form action = "/documents/{{ document._id }}/results" method = "POST">
-            <tr>
-                <td style="width:7em;"><input style="width:7em;" class= "ui-button ui-widget ui-corner-all" type="submit" name="submit" value="<< previous"></td>
-                <td style="width:7em;"><input style="width:7em;" class= "ui-button ui-widget ui-corner-all" type="submit" name="submit" value="next >>"></td>
-            </tr>
+        <tr id="doc-cycle">
+            <td style="width:7em;"><button style="width:7.5em;" class= "ui-button ui-widget ui-corner-all" id="prev-doc"><< previous</button></td>
+            <td style="width:7em;"><button style="width:7.5em;" class= "ui-button ui-widget ui-corner-all" id="next-doc">next >></button></td>
+        </tr>
 
-            <h2>Document: {{ document._id }}</h2>
-            {% if result %}
-                Measurement:
-                <select id="measure-type" name="measure-type">
-                    <option value="strict">Strict</option>
-                    <option value="approximate">Approximate</option>
-                    <option value="one_all" selected>One vs. All</option>
-                </select>
-                <table id="measure-settings" style="visibility: visible;">
-                    <tr>
-                        <td></td>
-                        <td>Threshold:</td>
-                        <td style="width:25px; height:15px"><input id="threshold" name="value" style="width:25px; height:15px" readonly></td>
-                        <td>Boundary:</td>
-                        <td style="width:25px; height:15px"><input id="boundary" name="value" style="width:25px; height:15px" readonly></td>
-                        <td></td>
-                        <td style="height:25px"><button class="ui-button ui-widget ui-corner-all" id="setvalues" style="height:25px; font-size:9pt">Confirm</button></td>
-                    </tr>
-                </table>
-                Trigger Type:
-                <select id="trigger-type" name="trigger-type">
-                    <option value="medication" selected>Medication</option>
-                    <option value="dose">Dose</option>
-                    <option value="modus">Modus</option>
-                    <option value="frequency">Frequency</option>
-                    <option value="duration">Duration</option>
-                    <option value="reason">Reason</option>
-                </select>
-                <br><br>
-                <div id="table-result">
-                    {{ result._table|safe }}
-                </div>
-                {% block result_content %} {% endblock %}
-            {% else %}
-                No Result
-            {% endif %}
-        </form>
+        <h2>Document: {{ document._id }}</h2>
+        {% if result %}
+            Measurement:
+            <select id="measure-type" name="measure-type">
+                <option value="strict">Strict</option>
+                <option value="approximate">Approximate</option>
+                <option value="one_all" selected>One vs. All</option>
+            </select>
+            <table id="measure-settings" style="visibility: visible;">
+                <tr>
+                    <td></td>
+                    <td>Threshold:</td>
+                    <td style="width:25px; height:15px"><input id="threshold" name="value" style="width:25px; height:15px" readonly></td>
+                    <td>Boundary:</td>
+                    <td style="width:25px; height:15px"><input id="boundary" name="value" style="width:25px; height:15px" readonly></td>
+                    <td></td>
+                    <td style="height:25px"><button class="ui-button ui-widget ui-corner-all" id="setvalues" style="height:25px; font-size:9pt">Confirm</button></td>
+                </tr>
+            </table>
+            Trigger Type:
+            <select id="trigger-type" name="trigger-type">
+                <option value="medication" selected>Medication</option>
+                <option value="dose">Dose</option>
+                <option value="modus">Modus</option>
+                <option value="frequency">Frequency</option>
+                <option value="duration">Duration</option>
+                <option value="reason">Reason</option>
+            </select>
+            <br><br>
+            <div id="table-result">
+                {{ result._table|safe }}
+            </div>
+            {% block result_content %} {% endblock %}
+        {% else %}
+            No Result
+        {% endif %}
         {% if sentences %}
             <h3>Sentences:</h3>
             <div id="sentence-vis">
@@ -58,14 +56,15 @@
         <script>
             head(function() {
                 var socket = io.connect('http://' + document.domain + ':' + location.port);
+                var form = document.contact
 
                 // prevents button to call "submit"
                 // original line (as of jquery-ui doc) was:
                 //      $( ".widget input[type=submit], .widget a, .widget button" ).button();
                 //      $( "button, input, a" ).click( function( event ) {
                 $( function() {
-                    $( ".widget button" ).button();
-                    $( "button" ).click( function( event ) {
+                    $( ".widget input[type=submit], .widget button" ).button();
+                    $( "button, input" ).click( function( event ) {
                       event.preventDefault();
                     } );
                 } );
@@ -88,6 +87,23 @@
                         'boundary': boundary.spinner("value"),
                         'ttype': $('#trigger-type').val(),
                         'mtype': "one_all"});
+                });
+
+                // cycling of documents
+                $("#prev-doc").click( function(event) {
+                    socket.emit('cycle doc', {
+                        "direction": "prev",
+                        "currentId": {{ document._id|tojson }}
+                         });
+                });
+                $("#next-doc").click( function(event) {
+                    socket.emit('cycle doc', {
+                        "direction": "next",
+                        "currentId": {{ document._id|tojson }}
+                         });
+                });
+                socket.on('cy doc', function(id) {
+                    window.location.replace("/documents/"+id+"/results");
                 });
 
                 // dispatches new data to the sentence visualizers

@@ -118,6 +118,23 @@ def change_table(tvalues):
     emit('ch table', _table_result)
 
 
+@socketio.on('cycle doc')
+def cycle_doc(dvalues):
+    global doc_list
+    _id = dvalues.get('currentId')
+    _dir = dvalues.get('direction')
+
+    pos = doc_list.index(_id)
+    if _dir == "prev":
+        _id = doc_list[pos - 1] if pos - 1 >= 0 else _id
+    elif _dir == "next":
+        _id = doc_list[pos + 1] if pos + 1 < len(doc_list) else _id
+
+    if _id == dvalues.get('currentId'):
+        return
+    emit('cy doc', _id)
+
+
 @gui_app.route('/', methods=['GET', 'POST'])
 @gui_app.route('/index', methods=['GET', 'POST'])
 def index():
@@ -145,38 +162,20 @@ def document_list():
     return render_template('index.html', title='Documents', documents=doc_list)
 
 
-@gui_app.route('/documents/<string:doc_id>/results', methods=['GET', 'POST'])
+@gui_app.route('/documents/<string:doc_id>/results')
 def resolve_request(doc_id="None"):
     global doc_list
     global current_doc
-    doc = cbatch.get_comparison_obj(doc_id)
-    pos = doc_list.index(doc_id)
-    _new_doc = False
 
-    if current_doc != doc_id:
-        _new_doc = True
+    if doc_id not in doc_list:
+        return redirect('/index')
+
+    doc = cbatch.get_comparison_obj(doc_id)
     current_doc = doc_id
 
-    result, sentences = None, None
-    if _new_doc:
-        print("[DEBUG] new document")
-        result, sentences = request_map["showFirst"](doc)
+    print("[DEBUG] new document")
+    result, sentences = request_map["showFirst"](doc)
 
-    if request.method == 'POST':
-        if request.form['submit'] == '<< previous':
-            doc_id = doc_list[pos - 1] if pos - 1 >= 0 else doc_id
-            print("[DEBUG] previous doc {}; pos: {}".format(doc_id, pos))
-            return redirect('/documents/{}/results'.format(doc_id))
-        elif request.form['submit'] == 'next >>':
-            doc_id = doc_list[pos + 1] if pos + 1 < len(doc_list) else doc_id
-            print("[DEBUG] next doc {}; pos: {}".format(doc_id, pos))
-            return redirect('/documents/{}/results'.format(doc_id))
-    if request.method == 'GET':
-        _request = dict(request.args)
-        if _request.get("_request"):
-            _action = _request.get("_request")[0]
-            sentences = _cycle_sentence()
-            print(sentences)
     print("[DEBUG] render documents page")
     return render_template('document.html', title='Document - ' + doc_id,
                            document=doc, result=result, sentences=sentences, annotators=_get_annotators(),
