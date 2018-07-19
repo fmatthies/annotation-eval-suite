@@ -2,8 +2,11 @@
 {% block content %}
     {% if document._id %}
         <form action = "/documents/{{ document._id }}/results" method = "POST">
-            <input type="submit" name="submit" value="<< previous">
-            <input type="submit" name="submit" value="next >>">
+            <tr>
+                <td style="width:7em;"><input style="width:7em;" class= "ui-button ui-widget ui-corner-all" type="submit" name="submit" value="<< previous"></td>
+                <td style="width:7em;"><input style="width:7em;" class= "ui-button ui-widget ui-corner-all" type="submit" name="submit" value="next >>"></td>
+            </tr>
+
             <h2>Document: {{ document._id }}</h2>
             {% if result %}
                 Measurement:
@@ -44,8 +47,8 @@
         {% if sentences %}
             <h3>Sentences:</h3>
             <div id="sentence-vis">
-                <button id="prev-sent"> << </button>
-                <button id="next-sent"> >> </button>
+                <button class="ui-button ui-widget ui-corner-all" id="prev-sent"> << </button>
+                <button class="ui-button ui-widget ui-corner-all" id="next-sent"> >> </button>
                 <br><br>
                 {% block sentence_content %} {% endblock %}
             </div>
