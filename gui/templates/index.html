@@ -11,10 +11,19 @@
     <h2>Comparison Set Up</h2>
     <form action="" method="post" name="fileloader">
         {{ form.hidden_tag() }}
-        Please give a path to the root folder
-        <p>{{ form.root_dir }}</p>
-        Please give a comma separated list of annotator names
+        Please give a Path to the Root Folder
+        <p>
+            {{ form.root_dir }}
+            <span style="display:inline-block; width: 10ex;"></span>
+            Using an Index File for Documents?
+            <input type="checkbox" name="index_file" value="index_file">
+        </p>
+        <br>
+        <p>
+            If you like you can include only specific Annotators<br>
+            In this case, please give a comma separated list of Annotator Names</p>
         <p>{{ form.anno_sets }}</p>
+        <br>
         <p><input type="submit" value="Load Files"></p>
     </form>
     {% endif %}

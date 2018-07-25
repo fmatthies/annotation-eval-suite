@@ -573,11 +573,13 @@ class Comparison(object):
         self._root_dir = froot
         self._documents = dict()
         self._text = ""
-        self._sent_splitter = BratRegEx()
+        self._sent_splitter = BratRegEx()  # ToDo: configurable Sentence Splitter
         self._max_set_length = len(max([_set[0] for _set in self._sets]))
         self._agreement_score_dict = dict()
+        self._trigger_set = None
 
         self._load_documents()
+        print()
 
     def _load_documents(self) -> None:
         """
@@ -627,6 +629,15 @@ class Comparison(object):
         :return: annotationsobject.Document
         """
         return self._documents.get(dset, None)
+
+    def get_trigger_set(self) -> Counter:
+        if self._trigger_set is None:
+            self._trigger_set = Counter()
+
+            for _doc in self._documents.values():
+                self._trigger_set += _doc.get_type_count_of('trigger')
+
+        return self._trigger_set
 
     def return_agreement_scores(self, trigger: str = list(AnnotationTypes.trigger_types())[0], match_type: str = 'strict',
                                 threshold: int=0, boundary: int=0, rm_whitespace: bool=True) -> Union[DataFrame, None]:
@@ -764,9 +775,9 @@ class Comparison(object):
 
 class BatchComparison(object):
 
-    def __init__(self, index_file, set_list, root):
+    def __init__(self, index, set_list, root):
         """
-        :param index_file:
+        :param index:
         :param set_list:
         :param root:
         """
@@ -774,11 +785,19 @@ class BatchComparison(object):
         self._sets = set_list
         self._root = root
         self._comparison = dict()
+        self._trigger_set = None
 
-        with open(index_file, 'r') as ifile:
-            for _doc_id in ifile.readlines():
-                _doc_id = _doc_id.rstrip("\n")
-                self._files.add(_doc_id)
+        if isinstance(index, str):
+            try:
+                with open(index, 'r') as ifile:
+                    for _doc_id in ifile.readlines():
+                        _doc_id = _doc_id.rstrip("\n")
+                        self._files.add(_doc_id)
+            except FileNotFoundError:
+                print("[Error] There is no index file under root '{}' .".format(index))
+
+        elif isinstance(index, list) or isinstance(index, set):
+            self._files = set(index)
 
         self._load_comparison()
 
@@ -881,3 +900,10 @@ class BatchComparison(object):
         :return: list of str
         """
         return sorted([_s.split("/")[0] for _s in self._sets])
+
+    def get_trigger_set(self):
+        if self._trigger_set is None:
+            self._trigger_set = set()
+            for _comp in self._comparison.values():
+                self._trigger_set.update(_comp.get_trigger_set())
+        return self._trigger_set

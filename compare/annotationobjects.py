@@ -2,6 +2,7 @@
 
 import os
 from typing import Dict, List, Tuple, Union, Set
+from collections import Counter
 
 from .properties import AnnotationTypes
 
@@ -544,3 +545,14 @@ class Document(object):
             return {m: self._mod_dict[m] for m in self._mod_dict.keys()}
         else:
             return None
+
+    def get_type_count_of(self, anno_type: str=None) -> Union['Counter', None]:
+        atypes = {'trigger': self.get_triggers,
+                  'relation': self.get_relations,
+                  'event': self.get_events,
+                  'modification': self.get_modifications}
+
+        if anno_type.lower() not in atypes.keys():
+            return
+
+        return Counter( getattr(anno, '_type') for anno in atypes.get(anno_type.lower())().values() )

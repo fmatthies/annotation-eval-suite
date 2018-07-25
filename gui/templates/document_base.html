@@ -27,12 +27,9 @@
             </table>
             Trigger Type:
             <select id="trigger-type" name="trigger-type">
-                <option value="medication" selected>Medication</option>
-                <option value="dose">Dose</option>
-                <option value="modus">Modus</option>
-                <option value="frequency">Frequency</option>
-                <option value="duration">Duration</option>
-                <option value="reason">Reason</option>
+                {% for t in triggers %}
+                    <option value="{{ t }}"> {{ t }} </option>
+                {% endfor %}
             </select>
             <br><br>
             <div id="table-result">

@@ -6,7 +6,7 @@ from wtforms.validators import DataRequired
 
 class FileChooser(Form):
     root_dir = StringField('root_dir', validators=[DataRequired()])
-    anno_sets = StringField('anno_sets', validators=[DataRequired()])
+    anno_sets = StringField('anno_sets', validators=None)
 
 
 class DocumentForm(Form):

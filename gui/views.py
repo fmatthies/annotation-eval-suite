@@ -1,41 +1,73 @@
 # -*- coding: utf-8 -*-
 import operator
 import os
+import glob
 
 from flask import render_template, redirect, request
 from flask_socketio import emit
 
 from compare import comparison
-from compare import properties
 from gui import gui_app, socketio
 from .forms import FileChooser
 
-SET_LIST = ["data1/alt", "data2"]
-ROOT_STRING = "test_resources/"
 FINDEX_STRING = "index"
+IS_INDEX_FILE = False
 
 cbatch = None
 doc_list = None
+trigger_list = None
 vis = None
 current_doc = None
 sentence_cache = list()
 sentence_index = 0
 
 
+def _get_doc_list(_root, _sets):
+    _docs = set()
+    for _anno in _sets:
+        _d = {f.name.rstrip(".txt") for f in os.scandir(os.path.join(_root, _anno)) if f.is_file() and f.name.endswith(".txt")}
+        if len(_docs) == 0:
+            _docs = _d
+        else:
+            _docs.union(_d)
+    return list(_docs)
+
+
 def _load(_root, _sets):
     global cbatch
     global doc_list
+    global trigger_list
     if cbatch is None:
         print("[DEBUG] Loading Batch Comparison for the first time")
-        _sets = [_s.rstrip() for _s in [_s.lstrip() for _s in _sets.split(",")]]
         try:
-            cbatch = comparison.BatchComparison(os.path.join(_root, FINDEX_STRING), _sets, _root)
+            if _sets != "":
+                _sets = [_s.rstrip() for _s in [_s.lstrip() for _s in _sets.split(",")]]
+            else:
+                _folder = [f.name for f in os.scandir(_root) if f.is_dir()]
+                _sets = [anno for anno in _folder if not anno.startswith(".")]
+
+            # ToDo: remove this global and have a checkbox for whether to use an index file of docs
+            #  or all docs across all annotators that have the same name
+            if IS_INDEX_FILE:
+                _index = os.path.join(_root, FINDEX_STRING)
+            else:
+                _index = _get_doc_list(_root, _sets)
+
+            cbatch = comparison.BatchComparison(_index, _sets, _root)
+            trigger_list = list(cbatch.get_trigger_set())
             doc_list = sorted([cbatch.get_comparison_obj(doc).get_id() for doc in cbatch.doc_iterator()])
+            if len(doc_list) == 0:
+                return "[Error] no documents"
             return "load:successful"
         except Exception as e:
             print(e)
             return _root, _sets
     return "load:successful"
+
+
+def _get_highest_count_trigger(doc):
+    highest = doc.get_trigger_set().most_common(1)
+    return highest[0][0]
 
 
 def _show_first(_doc):
@@ -48,9 +80,11 @@ def _show_first(_doc):
     sentence_index = 0
 
     vis = _doc.sent_compare_generator()
+    highest = _get_highest_count_trigger(_doc)
     return ({'_type': 'first',
-             '_table': _get_table('Medication', 'one_all', _threshold=0, _boundary=0),
-             '_measure': 'one_all'},
+             '_table': _get_table(highest, 'one_all', _threshold=0, _boundary=0),
+             '_measure': 'one_all',
+             '_highest_count': highest},
             _cycle_sentence("next"))
 
 
@@ -179,7 +213,7 @@ def resolve_request(doc_id="None"):
     print("[DEBUG] render documents page")
     return render_template('document.html', title='Document - ' + doc_id,
                            document=doc, result=result, sentences=sentences, annotators=_get_annotators(),
-                           triggers=list(properties.AnnotationTypes.trigger_types()))
+                           triggers=[t[0] for t in doc.get_trigger_set().most_common()])
 
 
 @gui_app.route('/index/reset')
