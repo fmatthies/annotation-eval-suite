@@ -4,7 +4,7 @@ import os
 from typing import Dict, List, Tuple, Union, Set
 from collections import Counter
 
-from .properties import AnnotationTypes
+#from .properties import AnnotationTypes
 
 
 class Annotation(object):
@@ -365,8 +365,7 @@ class Equivalence(Annotation):
 
 class Document(object):
 
-    def __init__(self, docid: str, froot: str, dset: str, txt_end: str=".txt", ann_end: str=".ann",
-                 excl_list: Union[List[str], None]=None) -> None:
+    def __init__(self, docid: str, froot: str, dset: str, txt_end: str=".txt", ann_end: str=".ann") -> None:
         """
 
         :param docid: 
@@ -390,21 +389,8 @@ class Document(object):
         self._txt = None
         self._ann = None
         self._equiv_counter = 0
-        self._active_ann_types = self._set_ann_types(excl_list)
 
         self._read_data()
-
-    def _set_ann_types(self, excl_list: Union[List[str], None]) -> Set[str]:
-
-        """
-
-        :param excl_list: 
-        :return: 
-        """
-        if excl_list is not None:
-            _excl = {_e for _e in excl_list if _e in AnnotationTypes.all_annotations()}
-            return AnnotationTypes.all_annotations().difference(_excl)
-        return AnnotationTypes.all_annotations()
 
     def _read_data(self) -> None:
         """
@@ -496,13 +482,11 @@ class Document(object):
         :param trigger_type: 
         :return: 
         """
-        if trigger_type in AnnotationTypes.trigger_types():
+        if trigger_type is not None:
             return {t: self._trig_dict[t] for t in self._trig_dict.keys()
                     if (self._trig_dict[t]).get_type() == trigger_type}
-        elif trigger_type is None:
-            return {t: self._trig_dict[t] for t in self._trig_dict.keys()}
         else:
-            return None
+            return {t: self._trig_dict[t] for t in self._trig_dict.keys()}
 
     def get_relations(self, relation_type: str=None) -> Union[Dict[str, 'Relation'], None]:
         """
@@ -510,13 +494,11 @@ class Document(object):
         :param relation_type: 
         :return: 
         """
-        if relation_type in AnnotationTypes.relation_types():
+        if relation_type is not None:
             return {r: self._rel_dict[r] for r in self._rel_dict.keys()
                     if (self._rel_dict[r]).get_type() == relation_type}
-        elif relation_type is None:
-            return {r: self._rel_dict[r] for r in self._rel_dict.keys()}
         else:
-            return None
+            return {r: self._rel_dict[r] for r in self._rel_dict.keys()}
 
     def get_events(self, event_type: str=None) -> Union[Dict[str, 'Event'], None]:
         """
@@ -524,13 +506,11 @@ class Document(object):
         :param event_type: 
         :return: 
         """
-        if event_type in AnnotationTypes.event_types():
+        if event_type is not None:
             return {e: self._event_dict[e] for e in self._event_dict.keys()
                     if (self._event_dict[e]).get_type() == event_type}
-        elif event_type is None:
-            return {e: self._event_dict[e] for e in self._event_dict.keys()}
         else:
-            return None
+            return {e: self._event_dict[e] for e in self._event_dict.keys()}
 
     def get_modifications(self, mod_type: str=None) -> Union[Dict[str, 'Modification'], None]:
         """
@@ -538,6 +518,7 @@ class Document(object):
         :param mod_type: 
         :return: 
         """
+        # ToDo: ???
         if True:
             return {m: self._mod_dict[m] for m in self._mod_dict.keys()
                     if (self._mod_dict[m]).get_type() == mod_type}

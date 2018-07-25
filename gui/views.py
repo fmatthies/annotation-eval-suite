@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 import operator
 import os
-import glob
 
+from seaborn import color_palette
 from flask import render_template, redirect, request
 from flask_socketio import emit
 
@@ -18,8 +18,27 @@ doc_list = None
 trigger_list = None
 vis = None
 current_doc = None
+brat_entity_vis = None
 sentence_cache = list()
 sentence_index = 0
+
+
+def _gather_entity_types(entity_list):
+    global cbatch
+
+    cp = color_palette('colorblind', len(entity_list)).as_hex()
+    annotation_entities = {"entity_types": []}
+    for ent in entity_list:
+        annotation_entities["entity_types"].append(
+            {
+                "type": ent,
+                "labels": [ent],
+                "bgColor": cp[entity_list.index(ent)],
+                "borderColor": "darken"
+            }
+        )
+
+    return annotation_entities
 
 
 def _get_doc_list(_root, _sets):
@@ -37,6 +56,7 @@ def _load(_root, _sets):
     global cbatch
     global doc_list
     global trigger_list
+    global brat_entity_vis
     if cbatch is None:
         print("[DEBUG] Loading Batch Comparison for the first time")
         try:
@@ -55,6 +75,7 @@ def _load(_root, _sets):
 
             cbatch = comparison.BatchComparison(_index, _sets, _root)
             trigger_list = list(cbatch.get_trigger_set())
+            brat_entity_vis = _gather_entity_types(trigger_list)
             doc_list = sorted([cbatch.get_comparison_obj(doc).get_id() for doc in cbatch.doc_iterator()])
             if len(doc_list) == 0:
                 return "[Error] no documents"
@@ -173,6 +194,7 @@ def cycle_doc(dvalues):
 @gui_app.route('/index', methods=['GET', 'POST'])
 def index():
     global cbatch
+    global brat_entity_vis
     if cbatch is not None:
         return redirect('/documents')
     form = FileChooser(request.form)
@@ -187,13 +209,16 @@ def index():
         print("[DEBUG] redirect to documents")
         return redirect('/documents')
     print("[DEBUG] form is not validated")
-    return render_template('index.html', title='Home', form=form)
+    return render_template('index.html', title='Home', form=form,
+                           entities=brat_entity_vis)
 
 
 @gui_app.route('/documents')
 def document_list():
     global doc_list
-    return render_template('index.html', title='Documents', documents=doc_list)
+    global brat_entity_vis
+    return render_template('index.html', title='Documents', documents=doc_list,
+                           entities=brat_entity_vis)
 
 
 @gui_app.route('/documents/<string:doc_id>/results')
@@ -213,7 +238,8 @@ def resolve_request(doc_id="None"):
     print("[DEBUG] render documents page")
     return render_template('document.html', title='Document - ' + doc_id,
                            document=doc, result=result, sentences=sentences, annotators=_get_annotators(),
-                           triggers=[t[0] for t in doc.get_trigger_set().most_common()])
+                           triggers=[t[0] for t in doc.get_trigger_set().most_common()],
+                           entities=brat_entity_vis)
 
 
 @gui_app.route('/index/reset')

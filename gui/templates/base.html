@@ -45,76 +45,7 @@
                 serverLocation + '/static/fonts/PT_Sans-Caption-Web-Regular.ttf'
             ];
 
-            var collData = {
-                entity_types: [
-                    {
-                        type   : 'Medication',
-                        /* The labels are used when displaying the annotion, in this case
-                            we also provide a short-hand "Per" for cases where
-                            abbreviations are preferable */
-                        labels : ['Medication'],
-                        // Blue is a nice colour for a person?
-                        bgColor: '#ff0000',
-                        // Use a slightly darker version of the bgColor for the border
-                        borderColor: 'darken'
-                    },
-                    {
-                        type   : 'Dose',
-                        /* The labels are used when displaying the annotion, in this case
-                            we also provide a short-hand "Per" for cases where
-                            abbreviations are preferable */
-                        labels : ['Dose'],
-                        // Blue is a nice colour for a person?
-                        bgColor: '#66ccff',
-                        // Use a slightly darker version of the bgColor for the border
-                        borderColor: 'darken'
-                    },
-                    {
-                        type   : 'Modus',
-                        /* The labels are used when displaying the annotion, in this case
-                            we also provide a short-hand "Per" for cases where
-                            abbreviations are preferable */
-                        labels : ['Modus'],
-                        // Blue is a nice colour for a person?
-                        bgColor: '#00cc00',
-                        // Use a slightly darker version of the bgColor for the border
-                        borderColor: 'darken'
-                    },
-                    {
-                        type   : 'Frequency',
-                        /* The labels are used when displaying the annotion, in this case
-                            we also provide a short-hand "Per" for cases where
-                            abbreviations are preferable */
-                        labels : ['Frequency'],
-                        // Blue is a nice colour for a person?
-                        bgColor: '#ffcc00',
-                        // Use a slightly darker version of the bgColor for the border
-                        borderColor: 'darken'
-                    },
-                    {
-                        type   : 'Duration',
-                        /* The labels are used when displaying the annotion, in this case
-                            we also provide a short-hand "Per" for cases where
-                            abbreviations are preferable */
-                        labels : ['Duration'],
-                        // Blue is a nice colour for a person?
-                        bgColor: '#cccccc',
-                        // Use a slightly darker version of the bgColor for the border
-                        borderColor: 'darken'
-                    },
-                    {
-                        type   : 'Reason',
-                        /* The labels are used when displaying the annotion, in this case
-                            we also provide a short-hand "Per" for cases where
-                            abbreviations are preferable */
-                        labels : ['Reason'],
-                        // Blue is a nice colour for a person?
-                        bgColor: '#990066',
-                        // Use a slightly darker version of the bgColor for the border
-                        borderColor: 'darken'
-                    }
-                ]
-            };
+            var collData = {{ entities|tojson|safe }}
         </script>
         <div>Annotation: <a href="/index">Home</a> -- <a href="/index/reset">New Comparison</a></div>
         <hr>
