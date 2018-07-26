@@ -34,7 +34,7 @@ If you want only specific annotators to be included, fill out the respective fie
 `annotator01, annotator03, ...`
 
 After that, the program should be self-explanatory. You can cycle through documents and their sentences that have at least one annotation across all annotators. Furthermore you can see a table for the inter annotator agreements of the respective document.  
-The measurements you can choose are `"strict", "approximate", "one vs. all"`. The last uses a centroid approach and you can choose `threshold` and `boundary` values.
+The measurements you can choose are `"strict", "approximate", "one vs. all"`. The first two calculate the average over all annotators in a one vs. one set up. The last uses a centroid approach and you can choose `threshold` and `boundary` values.
 
 ### Upcoming Features
 `to be filled`  
