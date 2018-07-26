@@ -1,4 +1,4 @@
-name: annotation-viewer
+name: annotation-eval-suite
 channels:
   - conda-forge
   - defaults

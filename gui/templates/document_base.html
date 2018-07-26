@@ -32,9 +32,16 @@
                 {% endfor %}
             </select>
             <br><br>
-            <div id="table-result">
-                {{ result._table|safe }}
-            </div>
+            <table>
+                <tr>
+                    <td><div id="table-result">
+                        {{ result._table|safe }}
+                    </div></td>
+                    <td><div id="table-stats">
+                        {{ result._stats|safe }}
+                    </div></td>
+                </tr>
+            </table>
             {% block result_content %} {% endblock %}
         {% else %}
             No Result

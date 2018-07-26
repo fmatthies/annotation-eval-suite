@@ -2,6 +2,7 @@
 import operator
 import os
 
+from pandas import DataFrame
 from seaborn import color_palette
 from flask import render_template, redirect, request
 from flask_socketio import emit
@@ -89,6 +90,17 @@ def _get_highest_count_trigger(doc):
     return highest[0][0]
 
 
+def _get_stats(_doc):
+    _sets = _doc.get_sets()
+    _triggers = [t for t in _doc.get_trigger_set()]
+    _df = DataFrame(index=_sets, columns=_triggers)
+    for annotator in _sets:
+        _counter = _doc.get_triggers_for_annotator(annotator)
+        for _t in _counter:
+            _df.at[annotator, _t] = _counter[_t]
+    return _df.to_html()
+
+
 def _show_first(_doc):
     global vis
     global sentence_cache
@@ -103,7 +115,8 @@ def _show_first(_doc):
     return ({'_type': 'first',
              '_table': _get_table(highest, 'one_all', _threshold=0, _boundary=0),
              '_measure': 'one_all',
-             '_highest_count': highest},
+             '_highest_count': highest,
+             '_stats': _get_stats(_doc)},
             _cycle_sentence("next"))
 
 

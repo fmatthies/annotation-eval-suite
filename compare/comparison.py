@@ -12,7 +12,7 @@ from re import DOTALL, VERBOSE
 from re import sub as re_sub
 
 from . import annotationobjects
-from .properties import AnnotationTypes
+#from .properties import AnnotationTypes
 from .centroids import Centroids
 
 
@@ -251,35 +251,35 @@ class StringComposer(object):
 
         return p1, p2, pn
 
-    def _get_entity_count(self) -> Tuple[Set[str], Dict[str, Dict[str, int]]]:
-        """
-
-        :return: 
-        """
-        ann_types = AnnotationTypes.entity_types()
-        count_dict = {s: {t: len((self._documents[s]).get_triggers(t))
-                          for t in ann_types} for s in self._sets}
-        return ann_types, count_dict
-
-    def _get_event_count(self) -> Tuple[Set[str], Dict[str, Dict[str, int]]]:
-        """
-
-        :return: 
-        """
-        ann_types = AnnotationTypes.event_types()
-        count_dict = {s: {t: len((self._documents[s]).get_events(t))
-                          for t in ann_types} for s in self._sets}
-        return ann_types, count_dict
-
-    def _get_relation_count(self) -> Tuple[Set[str], Dict[str, Dict[str, int]]]:
-        """
-
-        :return: 
-        """
-        ann_types = AnnotationTypes.relation_types()
-        count_dict = {s: {t: len((self._documents[s]).get_relations(t))
-                          for t in ann_types} for s in self._sets}
-        return ann_types, count_dict
+    # def _get_entity_count(self) -> Tuple[Set[str], Dict[str, Dict[str, int]]]:
+    #     """
+    #
+    #     :return:
+    #     """
+    #     ann_types = AnnotationTypes.entity_types()
+    #     count_dict = {s: {t: len((self._documents[s]).get_triggers(t))
+    #                       for t in ann_types} for s in self._sets}
+    #     return ann_types, count_dict
+    #
+    # def _get_event_count(self) -> Tuple[Set[str], Dict[str, Dict[str, int]]]:
+    #     """
+    #
+    #     :return:
+    #     """
+    #     ann_types = AnnotationTypes.event_types()
+    #     count_dict = {s: {t: len((self._documents[s]).get_events(t))
+    #                       for t in ann_types} for s in self._sets}
+    #     return ann_types, count_dict
+    #
+    # def _get_relation_count(self) -> Tuple[Set[str], Dict[str, Dict[str, int]]]:
+    #     """
+    #
+    #     :return:
+    #     """
+    #     ann_types = AnnotationTypes.relation_types()
+    #     count_dict = {s: {t: len((self._documents[s]).get_relations(t))
+    #                       for t in ann_types} for s in self._sets}
+    #     return ann_types, count_dict
 
     def _print_out(self, ann_types: Set[str], count_dict: Dict[str, Dict[str, int]]) -> None:
         """
@@ -290,21 +290,21 @@ class StringComposer(object):
         p1, p2, pn = self._get_statistics(ann_types, count_dict)
         print(p1 + p2 + "".join(pn))
 
-    def print_out(self, atype: str) -> None:
-        """
-
-        :param atype: 
-        """
-        if atype == "entities":
-            self._print_out(*self._get_entity_count())
-        elif atype == "events":
-            self._print_out(*self._get_event_count())
-        elif atype == "relations":
-            self._print_out(*self._get_relation_count())
-        else:
-            self._print_out(*self._get_entity_count())
-            self._print_out(*self._get_event_count())
-            self._print_out(*self._get_relation_count())
+    # def print_out(self, atype: str) -> None:
+    #     """
+    #
+    #     :param atype:
+    #     """
+    #     if atype == "entities":
+    #         self._print_out(*self._get_entity_count())
+    #     elif atype == "events":
+    #         self._print_out(*self._get_event_count())
+    #     elif atype == "relations":
+    #         self._print_out(*self._get_relation_count())
+    #     else:
+    #         self._print_out(*self._get_entity_count())
+    #         self._print_out(*self._get_event_count())
+    #         self._print_out(*self._get_relation_count())
 
 
 class AgreementScores(object):
@@ -316,7 +316,7 @@ class AgreementScores(object):
     (i.e. no annotation for any of the defined triggers) are large and basically unknown.
     """
 
-    def __init__(self, comp_obj: 'Comparison', trigger: str = list(AnnotationTypes.trigger_types())[0]) -> None:
+    def __init__(self, comp_obj: 'Comparison', trigger: str) -> None:
         """
 
         :type trigger: object
@@ -600,9 +600,9 @@ class Comparison(object):
         :return: bool
         """
         if trigger.lower() == 'all':
-            _trigger_list = AnnotationTypes.trigger_types()
-        elif trigger.title() in AnnotationTypes.trigger_types():
-            _trigger_list = [trigger.title()]
+            _trigger_list = list(self.get_trigger_set())
+        elif trigger.lower() in [t.lower() for t in self.get_trigger_set()]:
+            _trigger_list = [trigger.lower().title()]
         else:
             return False
         for _trigger in _trigger_list:
@@ -639,7 +639,7 @@ class Comparison(object):
 
         return self._trigger_set
 
-    def return_agreement_scores(self, trigger: str = list(AnnotationTypes.trigger_types())[0], match_type: str = 'strict',
+    def return_agreement_scores(self, trigger: str, match_type: str = 'strict',
                                 threshold: int=0, boundary: int=0, rm_whitespace: bool=True) -> Union[DataFrame, None]:
         """
         :param trigger: name of a specific trigger from properties.trigger_types() or 'All'
@@ -655,32 +655,7 @@ class Comparison(object):
         else:
             return None
 
-    def print_agreement_scores(self, trigger: str = list(AnnotationTypes.trigger_types())[0], match_type: str = 'strict',
-                               threshold: int=0, boundary: int=0, rm_whitespace: bool=True) -> None:
-        """
-        :param trigger: name of a specific trigger from properties.trigger_types() or 'All'
-        :param match_type:
-        :param threshold:
-        :param boundary:
-        :return: None
-        """
-        # TODO: printings are too narrow in there expression, because "ags" can be None for several reasons now
-        ags = self.return_agreement_scores(trigger, match_type, threshold, boundary, rm_whitespace=rm_whitespace)
-        if ags is not None:
-            print()
-            print("### Entity/Event types: {}, Matching: {} ###"
-                  .format(trigger.upper(), match_type))
-            print()
-            print(ags)
-            print()
-        else:
-            print()
-            print("No such Entity/Event '{}' in the Annotation definitions.".format(trigger))
-            print("Please specify one of {} or 'All'.".format(AnnotationTypes.trigger_types()))
-            print()
-
-    def return_errors(self, threshold=0, boundary=0,
-                      trigger=list(AnnotationTypes.trigger_types())[0], match_type='strict', error_type='both',
+    def return_errors(self, trigger, threshold=0, boundary=0, match_type='strict', error_type='both',
                       rm_whitespace=True, focus_annotator=None):
         if self._create_agreement_scores(trigger):
             _agreement = self._agreement_score_dict.get(trigger)
@@ -743,11 +718,11 @@ class Comparison(object):
         """
         return sorted([_s[0] for _s in self._sets])
 
-    def list_specific_trigger(self, trigger: str = list(AnnotationTypes.trigger_types())[0], _return: bool = False,
-                              counter=False) -> Union[set, 'Counter']:
+    def list_specific_trigger(self, trigger: str, _return: bool = False, counter: bool = False) -> Union[set, 'Counter']:
         """
         :param trigger: name of a specific trigger from properties.trigger_types() or 'All'
         :param _return: (optional) boolean whether to print results or return them
+        :param counter: (optional) boolean whether to create a counter object or just a set
         :return: set of the specified triggers
         """
         _trigger_list = list()
@@ -771,6 +746,10 @@ class Comparison(object):
             print(Counter(_trigger_list))
         else:
             print(set(sorted(_trigger_list)))
+
+    def get_triggers_for_annotator(self, annotator) -> 'Counter':
+        _doc = self.get_set_document(annotator)
+        return _doc.get_type_count_of('trigger')
 
 
 class BatchComparison(object):
@@ -829,7 +808,7 @@ class BatchComparison(object):
             _comp_obj = self._comparison[document]
             _comp_obj.print_general_statistics()
 
-    def return_agreement(self, document='All', trigger=list(AnnotationTypes.trigger_types())[0], match_type='strict', threshold=0, boundary=0,
+    def return_agreement(self, trigger, document='All', match_type='strict', threshold=0, boundary=0,
                         rm_whitespace=True):
         _sets = [_set.split("/")[0] for _set in self._sets]
         if document.lower() != 'all':
@@ -874,7 +853,7 @@ class BatchComparison(object):
 
             return _compl_df.round(2)
 
-    def print_agreement(self, document='All', trigger=list(AnnotationTypes.trigger_types())[0], match_type='strict', threshold=0, boundary=0,
+    def print_agreement(self, trigger, document='All', match_type='strict', threshold=0, boundary=0,
                         rm_whitespace=True):
         print()
         if document.lower() != "all":
@@ -886,9 +865,9 @@ class BatchComparison(object):
         else:
             print("### All Documents ###")
         print("### Entity/Event types: {}, Matching: {} ###".format(trigger.upper(), match_type))
-        print(self.return_agreement(document, trigger, match_type, threshold, boundary, rm_whitespace))
+        print(self.return_agreement(trigger, document, match_type, threshold, boundary, rm_whitespace))
 
-    def list_specific_trigger(self, document, trigger=list(AnnotationTypes.trigger_types())[0], _return=False, counter=False):
+    def list_specific_trigger(self, trigger, document, _return=False, counter=False):
         _comp = self._comparison.get(document, None)
         if _comp:
             if _return:
