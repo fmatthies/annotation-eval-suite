@@ -11,7 +11,6 @@ from gui import gui_app, socketio
 from .forms import FileChooser
 
 FINDEX_STRING = "index"
-IS_INDEX_FILE = False
 
 cbatch = None
 doc_list = None
@@ -52,7 +51,7 @@ def _get_doc_list(_root, _sets):
     return list(_docs)
 
 
-def _load(_root, _sets):
+def _load(_root, _sets, _index_file):
     global cbatch
     global doc_list
     global trigger_list
@@ -66,11 +65,10 @@ def _load(_root, _sets):
                 _folder = [f.name for f in os.scandir(_root) if f.is_dir()]
                 _sets = [anno for anno in _folder if not anno.startswith(".")]
 
-            # ToDo: remove this global and have a checkbox for whether to use an index file of docs
-            #  or all docs across all annotators that have the same name
-            if IS_INDEX_FILE:
+            if _index_file and os.path.exists(os.path.join(_root, FINDEX_STRING)):
                 _index = os.path.join(_root, FINDEX_STRING)
             else:
+                print("[INFO] not using an index file")
                 _index = _get_doc_list(_root, _sets)
 
             cbatch = comparison.BatchComparison(_index, _sets, _root)
@@ -201,7 +199,8 @@ def index():
     if form.validate_on_submit():
         _root = form.root_dir.data
         _sets = form.anno_sets.data
-        _load_result = _load(_root, _sets)
+        _index_file = form.index_file.data
+        _load_result = _load(_root, _sets, _index_file)
         if _load_result != "load:successful":
             print(_load_result)
             print("[DEBUG] somethings wrong with input; root: {}, sets: {}".format(*_load_result))
