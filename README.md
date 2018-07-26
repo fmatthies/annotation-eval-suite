@@ -10,7 +10,7 @@ When in your conda environment (source activate ENV_NAME), start a local standal
 The viewer is then accessible from `http://127.0.0.1:5000`
 
 ### Usage
-When prompted for a root folder, the program assumes the following structure:  
+When prompted for a root folder, the program assumes the following structure (where the `".ann"` files are `brat` conform files):  
 ```
 root
 |
@@ -37,6 +37,9 @@ After that, the program should be self-explanatory. You can cycle through docume
 The measurements you can choose are `"strict", "approximate", "one vs. all"`. The last uses a centroid approach and you can choose `threshold` and `boundary` values.
 
 ### Upcoming Features
-`to be filled`  
+- also allow for `".a1"` and `".a2"` input files
+- tooltips
+- [...]
+
 and  
 `please request via issues`
