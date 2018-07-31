@@ -10,6 +10,9 @@
          <link rel= "stylesheet" type= "text/css" href= "{{ url_for('static',filename='styles/jquery-ui/jquery-ui.structure.min.css') }}"/>
          <link rel= "stylesheet" type= "text/css" href= "{{ url_for('static',filename='styles/jquery-ui/jquery-ui.theme.min.css') }}"/>
          <link rel= "stylesheet" type= "text/css" href= "{{ url_for('static',filename='styles/main.css') }}">
+         <link rel= "stylesheet" type= "text/css" href= "{{ url_for('static',filename='styles/bokeh/bokeh-0.13.0.min.css') }}">
+         <link rel= "stylesheet" type= "text/css" href= "{{ url_for('static',filename='styles/bokeh/bokeh-widgets-0.13.0.min.css') }}">
+
          <script type="text/javascript" src="{{ url_for('static',filename='js/lib/head.load.min.js') }}"></script>
          <style>
             .ui-widget { font-size: 0.85em; }
@@ -25,7 +28,11 @@
                 serverLocation + '/static/js/lib/jquery.svg.min.js',
                 serverLocation + '/static/js/lib/jquery.svgdom.min.js',
                 serverLocation + '/static/js/lib/jquery-ui.min.js',
+
                 serverLocation + '/static/js/lib/socket.io.js',
+
+                serverLocation + '/static/js/lib/bokeh-0.13.0.min.js',
+                serverLocation + '/static/js/lib/bokeh-widgets-0.13.0.min.js',
 
                 // brat helper modules
                 serverLocation + '/static/js/brat/configuration.js',
@@ -47,6 +54,7 @@
 
             var collData = {{ entities|tojson|safe }}
         </script>
+
         <div>Annotation: <a href="/index">Home</a> -- <a href="/index/reset">New Comparison</a></div>
         <hr>
         {% block content %} {% endblock %}
