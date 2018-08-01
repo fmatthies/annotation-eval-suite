@@ -2,6 +2,7 @@
 import operator
 import os
 
+from math import pi
 from bokeh.embed import components
 from bokeh.plotting import figure as bfigure
 import bokeh.palettes as bpalettes
@@ -16,7 +17,7 @@ from .forms import FileChooser
 
 FINDEX_STRING = "index"
 SCRIPT_STRING = '<script type="text/javascript">'
-SCRIPT_END_STRING = "</script>;"
+SCRIPT_END_STRING = "</script>"
 
 cbatch = None
 doc_list = None
@@ -99,7 +100,7 @@ def _get_stats(_doc):
     _sets = _doc.get_sets()
     _triggers = [t for t in _doc.get_trigger_set()]
     _df = DataFrame(index=_sets, columns=_triggers)
-    _bfigure = bfigure(x_axis_label='Trigger', y_axis_label='Count',
+    _bfigure = bfigure(y_axis_label='Count',
                        plot_height=60*len(_sets) if len(_sets) >= 4 else 250)
 
     for annotator in _sets:
@@ -108,21 +109,14 @@ def _get_stats(_doc):
             _df.at[annotator, _t] = _counter[_t]
 
     ax = _df.T.plot.bar()
-    _bot = list()
-    _top = list()
-    _left = list()
-    _right = list()
-    _color = list()
     for _con in ax.containers:
         for _bar in _con:
-            _bot.append(_bar._y0)
-            _top.append(_bar._y1)
-            _left.append(_bar._x0)
-            _right.append(_bar._x1)
-            _color.append(bpalettes.Category10[10][_sets.index(_con._label)])
-    _bfigure.quad(bottom=_bot, top=_top, left=_left, right=_right, line_color='black',
-                  fill_color=_color)
-    # return _df.to_html()
+            _bfigure.quad(bottom=_bar._y0, top=_bar._y1, left=_bar._x0, right=_bar._x1, line_color='black',
+                          fill_color=bpalettes.Category10[10][_sets.index(_con._label)], legend=_con._label)
+    _bfigure.xaxis.ticker = list(range(len(_triggers)))
+    _bfigure.xaxis.major_label_overrides = {x: _triggers[x] for x in range(len(_triggers))}
+    _bfigure.xaxis.major_label_orientation = pi / 6
+
     return components(_bfigure)
 
 
@@ -139,14 +133,13 @@ def _show_first(_doc):
     highest = _get_highest_count_trigger(_doc)
     script, div = _get_stats(_doc)
     # This is really hacky, but I needed a way to load the bokeh script with 'head'
-    script = SCRIPT_STRING + "\nhead" + script[len(SCRIPT_STRING)+1:-(len(SCRIPT_END_STRING)+3)] + ";\n" + SCRIPT_END_STRING
+    script = SCRIPT_STRING + "\nhead" + script[len(SCRIPT_STRING)+1:-(len(SCRIPT_END_STRING)+4)] + ";\n" + SCRIPT_END_STRING
     return ({'_type': 'first',
              '_table': _get_table(highest, 'one_all', _threshold=0, _boundary=0),
              '_measure': 'one_all',
              '_highest_count': highest,
-             # '_stats': _get_stats(_doc)},
-             '_script': script,
-             '_div': div},
+             '_bokeh_script': script,
+             '_bokeh_div': div},
             _cycle_sentence("next"))
 
 

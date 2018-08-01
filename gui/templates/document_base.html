@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
     {% if document._id %}
-        {{ result._script|safe }}
+        {{ result._bokeh_script|safe }}
         <tr id="doc-cycle">
             <td style="width:7em;"><button style="width:7.5em;" class= "ui-button ui-widget ui-corner-all" id="prev-doc"><< previous</button></td>
             <td style="width:7em;"><button style="width:7.5em;" class= "ui-button ui-widget ui-corner-all" id="next-doc">next >></button></td>
@@ -39,7 +39,7 @@
                         {{ result._table|safe }}
                     </div></td>
                     <td><div id="table-stats">
-                        {{ result._div|safe }}
+                        {{ result._bokeh_div|safe }}
                     </div></td>
                 </tr>
             </table>
