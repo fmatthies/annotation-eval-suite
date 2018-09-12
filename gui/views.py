@@ -50,7 +50,8 @@ def _gather_entity_types(entity_list):
 def _get_doc_list(_root, _sets):
     _docs = set()
     for _anno in _sets:
-        _d = {f.name.rstrip(".txt") for f in os.scandir(os.path.join(_root, _anno)) if f.is_file() and f.name.endswith(".txt")}
+        _d = {os.path.splitext(f.name)[0] for f in os.scandir(os.path.join(_root, _anno)) if f.is_file() and
+              os.path.splitext(f)[1].endswith(".txt")}
         if len(_docs) == 0:
             _docs = _d
         else:
@@ -91,9 +92,11 @@ def _load(_root, _sets, _index_file):
     return "load:successful"
 
 
-def _get_highest_count_trigger(doc):
+def _get_highest_count_trigger(doc: comparison.Comparison):
     highest = doc.get_trigger_set().most_common(1)
-    return highest[0][0]
+    if highest:
+        return highest[0][0]
+    return None
 
 
 def _get_stats(_doc):
@@ -108,14 +111,18 @@ def _get_stats(_doc):
         for _t in _counter:
             _df.at[annotator, _t] = _counter[_t]
 
-    ax = _df.T.plot.bar()
-    for _con in ax.containers:
-        for _bar in _con:
-            _bfigure.quad(bottom=_bar._y0, top=_bar._y1, left=_bar._x0, right=_bar._x1, line_color='black',
-                          fill_color=bpalettes.Category10[10][_sets.index(_con._label)], legend=_con._label)
-    _bfigure.xaxis.ticker = list(range(len(_triggers)))
-    _bfigure.xaxis.major_label_overrides = {x: _triggers[x] for x in range(len(_triggers))}
-    _bfigure.xaxis.major_label_orientation = pi / 6
+    if not _df.empty:
+        ax = _df.T.plot.bar()
+        for _con in ax.containers:
+            for _bar in _con:
+                _bfigure.quad(bottom=_bar._y0, top=_bar._y1, left=_bar._x0, right=_bar._x1, line_color='black',
+                              fill_color=bpalettes.Category10[10][_sets.index(_con._label)], legend=_con._label)
+        _bfigure.xaxis.ticker = list(range(len(_triggers)))
+        _bfigure.xaxis.major_label_overrides = {x: _triggers[x] for x in range(len(_triggers))}
+        _bfigure.xaxis.major_label_orientation = pi / 6
+        _bfigure.xaxis.major_label_text_font_size = "11pt"
+    else:
+        pass
 
     return components(_bfigure)
 
@@ -177,12 +184,14 @@ def _cycle_sentence(_direction):
 def _get_table(_trigger_type, _measure_type, _threshold, _boundary):
     global cbatch
     global current_doc
-    _doc = cbatch.get_comparison_obj(document=current_doc)
-    if _measure_type == "one_all":
-        return _doc.return_agreement_scores(trigger=_trigger_type, match_type=_measure_type,
-                                            threshold=_threshold, boundary=_boundary).to_html()
-    return (_doc.return_agreement_scores(
-        trigger=_trigger_type, match_type=_measure_type)[["all_fscore", "all_precision", "all_recall"]]).to_html()
+    _doc: comparison.Comparison = cbatch.get_comparison_obj(document=current_doc)
+    if _trigger_type is not None:
+        if _measure_type == "one_all":
+            return _doc.return_agreement_scores(trigger=_trigger_type, match_type=_measure_type,
+                                                threshold=_threshold, boundary=_boundary).to_html()
+        return (_doc.return_agreement_scores(
+            trigger=_trigger_type, match_type=_measure_type)[["all_fscore", "all_precision", "all_recall"]]).to_html()
+    return
 
 
 def _get_annotators():

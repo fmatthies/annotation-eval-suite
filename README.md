@@ -43,7 +43,7 @@ After that, the program should be self-explanatory. You can cycle through docume
 and their sentences that have at least one annotation across all annotators. Furthermore you can see a table
 or the inter annotator agreements of the respective document.  
 The measurements you can choose are `"strict", "approximate", "one vs. all"`.
-the first two calculate the average over all annotators in a one vs. one set up.
+The first two calculate the average over all annotators in a one vs. one set up.
 the last uses a centroid approach [3] and you can choose `threshold` and `boundary` values.
 
 ### Upcoming Features
