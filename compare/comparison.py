@@ -649,11 +649,11 @@ class Comparison(object):
         :return: pandas.DataFrame
         """
         # TODO: some handling for 'All' triggers
-        if self._create_agreement_scores(trigger.title()):
+        if trigger is not None and self._create_agreement_scores(trigger.title()):
             return self._agreement_score_dict[trigger.title()].get_dataframe(match_type, threshold, boundary,
-                                                                     rm_whitespace=rm_whitespace)
+                                                                             rm_whitespace=rm_whitespace)
         else:
-            return None
+            return DataFrame(data={'None': None})
 
     def return_errors(self, trigger, threshold=0, boundary=0, match_type='strict', error_type='both',
                       rm_whitespace=True, focus_annotator=None):

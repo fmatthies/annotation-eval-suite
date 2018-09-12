@@ -321,7 +321,7 @@ class Centroids(object):
         """
         _sets = "_".join([str(_set) for _set in sorted(sets)]) if sets is not None else "all"
         _trigger = trigger.title()
-        if _trigger in AnnotationTypes.trigger_types():
+        if _trigger in self._comp_obj.get_trigger_set().keys():  # AnnotationTypes.trigger_types():
             _key = _trigger + "-" + _sets
             if self._centroid_objects_dict.get(_key, None) is None:
                 for _pl in self._find_local_plateaus(self._get_centroid_array(_trigger, sets),
