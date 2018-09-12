@@ -5,9 +5,10 @@ This little program provides some utilities for visualizing and calculating Inte
 ### Setup
 **Linux**:  
 Create a `conda` [2] environment from the `annotation-viewer.yml` file with  
-`conda env create -f annotation-viewer.yml -p PATH/TO/YOUR/CONDA_ENVS/FOLDER/ENV_NAME`
+`conda env create -f annotation-viewer.yml`
+This should create an environment with the name `annotation-eval-suite` (`conda info --envs` lists all environments).
 
-When in your `conda` environment (source activate ENV_NAME), start a local standalone server of the program with  
+When in your `conda` environment (`conda` OR `source activate annotation-eval-suite`), start a local standalone server of the program with  
 `python run.py`  
 The viewer is then accessible from `http://127.0.0.1:5000`
 
@@ -42,7 +43,7 @@ After that, the program should be self-explanatory. You can cycle through docume
 and their sentences that have at least one annotation across all annotators. Furthermore you can see a table
 or the inter annotator agreements of the respective document.  
 The measurements you can choose are `"strict", "approximate", "one vs. all"`.
-the first two calculate the average over all annotators in a one vs. one set up.
+The first two calculate the average over all annotators in a one vs. one set up.
 the last uses a centroid approach [3] and you can choose `threshold` and `boundary` values.
 
 ### Upcoming Features
