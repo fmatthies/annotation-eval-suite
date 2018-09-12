@@ -5,9 +5,10 @@ This little program provides some utilities for visualizing and calculating Inte
 ### Setup
 **Linux**:  
 Create a `conda` [2] environment from the `annotation-viewer.yml` file with  
-`conda env create -f annotation-viewer.yml -p PATH/TO/YOUR/CONDA_ENVS/FOLDER/ENV_NAME`
+`conda env create -f annotation-viewer.yml`
+This should create an environment with the name `annotation-eval-suite` (`conda info --envs` lists all environments).
 
-When in your `conda` environment (source activate ENV_NAME), start a local standalone server of the program with  
+When in your `conda` environment (`conda` OR `source activate annotation-eval-suite`), start a local standalone server of the program with  
 `python run.py`  
 The viewer is then accessible from `http://127.0.0.1:5000`
 
