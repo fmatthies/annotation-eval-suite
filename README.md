@@ -8,9 +8,13 @@ Create a `conda` [2] environment from the `annotation-viewer.yml` file with
 `conda env create -f annotation-viewer.yml`
 This should create an environment with the name `annotation-eval-suite` (`conda info --envs` lists all environments).
 
-When in your `conda` environment (`conda` OR `source activate annotation-eval-suite`), start a local standalone server of the program with  
-`python run.py`  
+When in your `conda` environment (`conda activate annotation-eval-suite` OR `source activate annotation-eval-suite`), start a local standalone server of the program with
+`python run.py`
 The viewer is then accessible from `http://127.0.0.1:5000`
+
+**Windows**:
+Manually remove all dependencies from `annotation-viewer.yml` that are unavailable under Windows (`conda` will give you a list when you try creating the environment, cf. Linux setup).
+Activate the new `conda` environment in CMD (`activate conda`) and start the server (`python run.py`).
 
 ### Usage
 When prompted for a root folder, the program assumes the following structure
