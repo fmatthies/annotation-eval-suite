@@ -768,7 +768,7 @@ class BatchComparison(object):
 
         if isinstance(index, str):
             try:
-                with open(index, 'r') as ifile:
+                with open(index, 'r', encoding=annotationobjects.ENCODING) as ifile:
                     for _doc_id in ifile.readlines():
                         _doc_id = _doc_id.rstrip("\n")
                         self._files.add(_doc_id)

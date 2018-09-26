@@ -7,6 +7,9 @@ from collections import Counter
 #from .properties import AnnotationTypes
 
 
+ENCODING = 'utf-8'
+
+
 class Annotation(object):
 
     def __init__(self, aid: str, atype: str, parent: 'Document') -> None:
@@ -412,7 +415,7 @@ class Document(object):
 
         :param no_newline: 
         """
-        with open(self._txt, 'r') as fi:
+        with open(self._txt, 'r', encoding=ENCODING) as fi:
             lines = fi.readlines()
             if no_newline:
                 t_list = [l.rstrip('\n') for l in lines]
@@ -424,7 +427,7 @@ class Document(object):
         """
 
         """
-        with open(self._ann, 'r') as fi:
+        with open(self._ann, 'r', encoding=ENCODING) as fi:
             lines = fi.readlines()
             lines = [(l.rstrip('\n')).split('\t') for l in lines]
             anno_list = list()
