@@ -18,4 +18,4 @@ sys.excepthook = my_handler
 
 
 # gui_app.run(debug=True)
-socketio.run(gui_app, debug=True)
+socketio.run(gui_app, debug=True, host="0.0.0.0")
