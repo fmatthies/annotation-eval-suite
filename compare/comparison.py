@@ -10,6 +10,7 @@ from typing import Generator, List, Tuple, Union, Dict, Set
 from re import compile as re_compile
 from re import DOTALL, VERBOSE
 from re import sub as re_sub
+from spacy.lang.de import German
 
 from . import annotationobjects
 #from .properties import AnnotationTypes
@@ -558,7 +559,7 @@ class Comparison(object):
     def __init__(self, docid: str, slist: list, froot: str) -> None:
         """
         Creates a comparison object of multiple annotations for a specific document ('docid').
-        The path to the docuemnt is given by 'froot' + 'slist[i]' + 'docid'.
+        The path to the document is given by 'froot' + 'slist[i]' + 'docid'.
         
         :param docid: id of a document
         :type docid: str
@@ -573,13 +574,12 @@ class Comparison(object):
         self._root_dir = froot
         self._documents = dict()
         self._text = ""
-        self._sent_splitter = BratRegEx()  # ToDo: configurable Sentence Splitter
+        self._sent_splitter = BratRegEx() # ToDo: configurable Sentence Splitter
         self._max_set_length = len(max([_set[0] for _set in self._sets]))
         self._agreement_score_dict = dict()
         self._trigger_set = None
 
         self._load_documents()
-        print()
 
     def _load_documents(self) -> None:
         """
@@ -663,6 +663,7 @@ class Comparison(object):
                 return _agreement.return_errors(match_type, error_type, threshold, boundary,
                                                 rm_whitespace=rm_whitespace, focus_annotator=focus_annotator)
 
+    # Todo: yields only sentences that contain an annotation. Do I want that to be forced or should there be an arg?
     def sent_compare_generator(self) -> Generator:
         _sent_nr = 0
         for _offset in self._sent_splitter.split_sentence(self._text):
@@ -792,7 +793,7 @@ class BatchComparison(object):
 
     def doc_iterator(self):
         for _doc in self._files:
-            print("### Document: {} ###".format(_doc))
+            # print("### Document: {} ###".format(_doc))
             yield _doc
 
     def doc_list(self):
