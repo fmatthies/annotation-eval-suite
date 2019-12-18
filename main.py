@@ -20,6 +20,16 @@ def get_comparison_doc(comparison_batch, doc_id):
     return cdoc
 
 
+def display_sentence_comparison(annotators, sentences, triggers, entities, sent_no):
+    for _annotator, _values in triggers[sent_no].items():
+        if _annotator in annotators:
+            st.subheader(_annotator)
+            st.write(
+                return_html(sentence=sentences[sent_no], triggers=_values, entity_list=entities),
+                unsafe_allow_html=True
+            )
+
+
 @st.cache
 def has_document_index(folder_root):
     for _index in ["index", "index.txt", "Index", "Index.txt", "INDEX", "INDEX.txt"]:
@@ -31,7 +41,7 @@ def has_document_index(folder_root):
 @st.cache
 def get_color_dict(entity_list):
     colors = color_palette('colorblind', len(entity_list)).as_hex()
-    return {entity_list[i]: colors[i] for i in range(len(entity_list))}
+    return {entity_list[i].upper(): colors[i] for i in range(len(entity_list))}
 
 
 @st.cache
@@ -63,20 +73,19 @@ def get_documents(folder_root, annotators):
 
 
 @st.cache
-def get_sentences(comparison_doc):
-    sents, _ = zip(*comparison_doc.sent_compare_generator())
-    return sents
+def get_entity_set(folder_root, annotator_list):
+    _index = has_document_index(folder_root)
+    _comparison_batch = get_comparison_batch(folder_root=folder_root, index_file=_index, annotator_list=annotator_list)
+    return sorted(_comparison_batch.get_trigger_set())
 
 
 @st.cache
-def get_triggers(comparison_doc):
-    _, triggers = zip(*comparison_doc.sent_compare_generator())
-    return triggers
-
-
-@st.cache
-def load_data(folder_root, annotator_list):
-    pass
+def get_sentence_annotation(folder_root, annotator_list, doc_id):
+    _index = has_document_index(folder_root)
+    _comparison_batch = get_comparison_batch(folder_root=folder_root, index_file=_index, annotator_list=annotator_list)
+    _comparison_doc = get_comparison_doc(_comparison_batch, doc_id)
+    sentences, triggers = zip(*_comparison_doc.sent_compare_generator())
+    return sentences, triggers
 
 
 @st.cache
@@ -86,32 +95,18 @@ def get_folder_root():
 
 def main():
     _folder_root = get_folder_root()
-    _annotators = get_annotators(folder_root=_folder_root)
+    _all_annotators = get_annotators(folder_root=_folder_root)
+    _entities = get_entity_set(folder_root=_folder_root, annotator_list=_all_annotators)
 
-    annotators = st.multiselect("Select the annotators", options=_annotators, default=_annotators)
-    doc_id = st.sidebar.selectbox("Document", get_documents(folder_root=_folder_root, annotators=annotators))
+    annotators = st.sidebar.multiselect("Select annotators", options=_all_annotators, default=_all_annotators)
+    doc_id = st.sidebar.selectbox("Select document", get_documents(folder_root=_folder_root, annotators=annotators))
 
-    if st.button("Load data"):
-        load_data(folder_root=_folder_root, annotator_list=annotators)
+    _sentences, _triggers = get_sentence_annotation(folder_root=_folder_root, annotator_list=_all_annotators, doc_id=doc_id)
+    sent_no = st.sidebar.slider("Sentence no.", 1, len(_sentences), 1)
+
+    st.header("Sentence " + str(sent_no))
+    sent_no -= 1
+    display_sentence_comparison(annotators, _sentences, _triggers, _entities, sent_no)
 
 
 main()
-# if __name__ == "__main__":
-#     alist = ["anno01", "anno02", "anno03", "anno04"]
-#     froot = "test-resources"
-#     findex = "index"
-#     ent_list = ["MEDICATION", "ANAPHORA", "FREQUENCY", "DOSE", "REASON", "MODUS"]
-#
-#     comparison_batch = get_comparison_batch(froot, findex, alist)
-#
-#     doc_id = st.sidebar.selectbox("Document", sorted(comparison_batch.doc_list()))
-#     comparison_doc = get_comparison_doc(comparison_batch, doc_id)
-#
-#     sentences = get_sentences(comparison_doc)
-#     sent_no = st.sidebar.slider("Sentence No.", 1, len(sentences), 1)
-#
-#     st.header("Sentence " + str(sent_no))
-#     sent_no -= 1
-#     for a, v in get_triggers(comparison_doc)[sent_no].items():
-#         st.subheader(a)
-#         st.write(return_html(sentences[sent_no], v, ent_list), unsafe_allow_html=True)
