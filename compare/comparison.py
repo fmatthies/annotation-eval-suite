@@ -755,7 +755,7 @@ class Comparison(object):
 
 class BatchComparison(object):
 
-    def __init__(self, index, set_list, root):
+    def __init__(self, index, set_list, root, init_comp=True):
         """
         :param index:
         :param set_list:
@@ -766,6 +766,7 @@ class BatchComparison(object):
         self._root = root
         self._comparison = dict()
         self._trigger_set = None
+        self._init = False
 
         if isinstance(index, str):
             try:
@@ -779,14 +780,21 @@ class BatchComparison(object):
         elif isinstance(index, list) or isinstance(index, set):
             self._files = set(index)
 
-        self._load_comparison()
+        if init_comp:
+            self._load_comparison()
 
     def _load_comparison(self):
-        for fi in self._files:
-            comp = Comparison(fi, self._sets, self._root)
-            self._comparison[fi] = comp
+        if not self._init:
+            for fi in self._files:
+                comp = Comparison(fi, self._sets, self._root)
+                self._comparison[fi] = comp
+            self._init = True
+
+    def init_comparison(self):
+        self._load_comparison()
 
     def get_comparison_obj(self, document):
+        self._load_comparison()
         if document in self._files:
             _comp_obj = self._comparison[document]
             return _comp_obj
@@ -800,17 +808,20 @@ class BatchComparison(object):
         return self._files
 
     def compare_doc(self, document):
+        self._load_comparison()
         if document in self._files:
             _comp_obj = self._comparison[document]
             return _comp_obj.sent_compare_generator()
 
     def print_statistics(self, document):
+        self._load_comparison()
         if document in self._files:
             _comp_obj = self._comparison[document]
             _comp_obj.print_general_statistics()
 
     def return_agreement(self, trigger, document='All', match_type='strict', threshold=0, boundary=0,
                         rm_whitespace=True):
+        self._load_comparison()
         _sets = [_set.split("/")[0] for _set in self._sets]
         if document.lower() != 'all':
             if document in self._files:
@@ -869,6 +880,7 @@ class BatchComparison(object):
         print(self.return_agreement(trigger, document, match_type, threshold, boundary, rm_whitespace))
 
     def list_specific_trigger(self, trigger, document, _return=False, counter=False):
+        self._load_comparison()
         _comp = self._comparison.get(document, None)
         if _comp:
             if _return:
@@ -882,6 +894,7 @@ class BatchComparison(object):
         return sorted([_s.split("/")[0] for _s in self._sets])
 
     def get_trigger_set(self):
+        self._load_comparison()
         if self._trigger_set is None:
             self._trigger_set = set()
             for _comp in self._comparison.values():
