@@ -896,7 +896,7 @@ class BatchComparison(object):
     def get_trigger_set(self):
         self._load_comparison()
         if self._trigger_set is None:
-            self._trigger_set = set()
+            self._trigger_set = Counter()
             for _comp in self._comparison.values():
                 self._trigger_set.update(_comp.get_trigger_set())
         return self._trigger_set

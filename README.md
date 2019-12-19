@@ -32,7 +32,7 @@ When in your `conda` environment (`conda activate annotation-eval-suite` OR `sou
 `python run.py`
 The viewer is then accessible from `http://0.0.0.0:5000`
 
-**Windows**:
+**Windows**:  
 Manually remove all dependencies from `annotation-viewer.yml` that are unavailable under Windows (`conda` will give you a list when you try creating the environment, cf. Linux setup).
 Activate the new `conda` environment in CMD (`activate conda`) and start the server (`python run.py`).
 
