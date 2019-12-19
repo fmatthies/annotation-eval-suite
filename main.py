@@ -131,6 +131,7 @@ def main():
 
     _index = None
     _folder_root = get_folder_root()
+    # _folder_root = st.text_input("Path to folder:")
     _all_annotators = get_annotators(folder_root=_folder_root)
 
     cmp = load_data(_folder_root, _all_annotators, _index)
