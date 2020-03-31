@@ -1,38 +1,24 @@
-#!/home/matthies/workspaces/virtual_envs/bionlpformat_annotation/bin/python
 # -*- coding: utf-8 -*-
 
-import os
+import io
 import streamlit as st
 
-from compare import comparison
+from typing import Iterable
 from spacy import displacy
 from seaborn import color_palette
 
-
-def select_match_type():
-    match_dict = {"One vs. All": "one_all", "Strict": "strict", "Approximate": "approximate"}
-    _mtype = st.sidebar.selectbox("Match type", list(match_dict.keys()))
-    return match_dict[_mtype]
-
-
-def get_threshold_boundary(annotators):
-    _max_t = len(annotators) - 1
-    _max_b = _max_t - 1
-    _threshold = st.sidebar.slider("Threshold", 0, _max_t, 0)
-    _boundary = st.sidebar.slider("Boundary", 0, _max_b, 0)
-    return _threshold, _boundary
+from deserialize import get_project_files
+import uima
+from uima import gather_annotations
+from uima import load_cas_from_xmi, load_typesystem
+from uima import MedicationEntity, MedicationAttribute
 
 
-def display_document_agreement(folder_root, annotators, entity, doc_id, index_file=None,
-                               match_type="strict", threshold=0, boundary=0):
-    _cmp = load_data(folder_root, annotators, index_file)
-    _df = _cmp.return_agreement(entity, doc_id, match_type, threshold, boundary)
-    if match_type != "one_all":
-        _annotators = _df.index.values
-        _df_view = _df[[a + "_fscore" for a in _annotators]]
-        st.write(_df_view)
-    else:
-        st.write(_df)
+TYPE_SYSTEM_FILE_NAME = "TypeSystem.xml"
+USERS_KEY = "users"
+DOCUMENTS_KEY = "documents"
+TYPE_SYSTEM_KEY = "type_system"
+SENTENCE_TYPE = "de.tudarmstadt.ukp.dkpro.core.api.segmentation.type.Sentence"
 
 
 def display_sentence_comparison(annotators, sentences, triggers, entities, sent_no, focus_entity=None):
@@ -50,14 +36,6 @@ def create_selectbox_with_counts(entities, counts):
     _entity = st.sidebar.selectbox(
         "Select focus entity", [entities[i] + " ({})".format(counts[i]) for i in range(len(entities))])
     return _entity.split()[0]
-
-
-@st.cache
-def has_document_index(folder_root):
-    for _index in ["index", "index.txt", "Index", "Index.txt", "INDEX", "INDEX.txt"]:
-        if os.path.exists(os.path.join(os.path.abspath(folder_root), _index)):
-            return _index
-    return False
 
 
 @st.cache
@@ -83,93 +61,83 @@ def return_html(sentence, triggers, entity_list, focus_entity):
 
 
 @st.cache
-def get_entities(folder_root, annotators, doc_id=None, index_file=None):
-    _cmp = load_data(folder_root, annotators, index_file)
-    if doc_id is None:
-        _entities, _counts = zip(*_cmp.get_trigger_set().most_common())
-    else:
-        _entities, _counts = zip(*_cmp.get_comparison_obj(doc_id).get_trigger_set().most_common())
-    return _entities, _counts
+def get_entities(entity_type: str, document: str, user: str, data: dict):
+    type_system = load_typesystem(str(data.get(TYPE_SYSTEM_KEY), 'utf-8'))
+    cas = load_cas_from_xmi(str(data.get("{}-{}".format(document, user)), 'utf-8'), type_system)
+    return [e for e in cas.select(entity_type)]
 
 
 @st.cache
-def get_annotators(folder_root):
-    _abs_path = os.path.abspath(folder_root)
-    return sorted([foo for foo in os.listdir(_abs_path) if os.path.isdir(os.path.join(_abs_path, foo))])
+def get_all_sentences(document: str, data: dict) -> list:
+    key = [k for k in data.keys() if k.startswith(document)][0]
+    type_system = load_typesystem(str(data.get(TYPE_SYSTEM_KEY), 'utf-8'))
+    cas = load_cas_from_xmi(str(data.get(key), 'utf-8'), type_system)
+    return [s for s in cas.select(SENTENCE_TYPE)]
 
 
-@st.cache
-def get_documents(folder_root, annotators, index_file=None):
-    _cmp = load_data(folder_root, annotators, index_file)
-    return sorted(_cmp.doc_list())
+@st.cache(hash_funcs={io.BytesIO: hash})
+def load_data(zip_file: str) -> dict:
+    documents = list()
+    users = set()
+    data_dict = dict()
+    for document, value in get_project_files(zip_file).items():
+        if document == TYPE_SYSTEM_FILE_NAME:
+            data_dict[TYPE_SYSTEM_KEY] = value.read()
+        else:
+            document = "".join(document.split(".")[:-1])
+            documents.append(document)
+            for user, xmi_bytes in value.items():
+                user = "".join(user.split(".")[:-1])
+                users.add(user)
+                data_dict["{}-{}".format(document, user)] = xmi_bytes.read()
 
-
-@st.cache
-def get_sentence_annotation(folder_root, annotator_list, doc_id, index_file=None):
-    _cmp = load_data(folder_root, annotator_list, index_file)
-    _comparison_doc = _cmp.get_comparison_obj(doc_id)
-    sentences, triggers = zip(*_comparison_doc.sent_compare_generator())
-    return sentences, triggers
-
-
-@st.cache
-def get_folder_root():
-    return "test-resources"
-
-
-@st.cache(allow_output_mutation=True)
-def load_data(folder_root, annotators, index_file=None):
-    _index = index_file
-    if index_file is None:
-        _index = has_document_index(folder_root)
-    cbatch = comparison.BatchComparison(index=os.path.join(folder_root, _index), set_list=annotators,
-                                        root=os.path.join(folder_root))
-    return cbatch
+    data_dict[DOCUMENTS_KEY] = sorted(documents)
+    data_dict[USERS_KEY] = sorted(users)
+    return data_dict
 
 
 def main():
-
-    _index = None
-    _folder_root = get_folder_root()
-    # _folder_root = st.text_input("Path to folder:")
-    _all_annotators = get_annotators(folder_root=_folder_root)
-
-    cmp = load_data(_folder_root, _all_annotators, _index)
-    _all_entities, _all_entity_counts = get_entities(_folder_root, _all_annotators, index_file=_index)
-
+    data = None
     # ----- Sidebar ----- #
+    fis = st.sidebar.file_uploader("Upload test data")
+    # Todo: implement deserializing from project zip file
+    if fis is not None:
+        data = load_data(fis)
+        st.write(data)
+
     st.sidebar.subheader("General")
     # --> Document Selection
-    _documents = get_documents(_folder_root, _all_annotators, _index)
-    doc_id = st.sidebar.selectbox("Select document", _documents)
+    doc_id = st.sidebar.selectbox("Select document", data.get(DOCUMENTS_KEY))
     # --> Entity Selection
-    _doc_entities, _doc_entity_counts = get_entities(_folder_root, _all_annotators, doc_id, _index)
-    entity = create_selectbox_with_counts(_doc_entities, _doc_entity_counts)
-    fc_entity_color_only = st.sidebar.checkbox("Color only focus entity", False)
-    # --> Agreement Properties
-    st.sidebar.subheader("Agreement Properties")
-    match_type = select_match_type()
-    threshold, boundary = 0, 0
-    if match_type == "one_all":
-        threshold, boundary = get_threshold_boundary(_all_annotators)
+    # _doc_entities, _doc_entity_counts = get_entities(_folder_root, _all_annotators, doc_id, _index)
+    # entity = create_selectbox_with_counts(_doc_entities, _doc_entity_counts)
+    # fc_entity_color_only = st.sidebar.checkbox("Color only focus entity", False)
+    # # --> Agreement Properties
+    # st.sidebar.subheader("Agreement Properties")
+    # match_type = select_match_type()
+    # threshold, boundary = 0, 0
+    # if match_type == "one_all":
+    #     threshold, boundary = get_threshold_boundary(_all_annotators)
     # --> Annotator Selection
     st.sidebar.subheader("Sentences")
-    annotators = st.sidebar.multiselect("Select annotators", options=_all_annotators, default=_all_annotators)
+    annotators = st.sidebar.multiselect("Select annotators", options=data.get(USERS_KEY), default=data.get(USERS_KEY))
     # --> Sentence Selection
-    _sentences, _triggers = get_sentence_annotation(_folder_root, _all_annotators, doc_id, _index)
-    sent_no = st.sidebar.slider("Sentence no.", 1, len(_sentences), 1)
-
-    # ----- Document Agreement Visualization ----- #
-    st.header("Agreement - Document " + str(doc_id) + " ({})".format(entity))
-    display_document_agreement(_folder_root, _all_annotators, entity, doc_id, _index, match_type, threshold, boundary)
-
-    # ----- Visualize Sentence Comparison ----- #
+    sentences = get_all_sentences(doc_id, data)
+    sent_no = st.sidebar.slider("Sentence no.", 1, len(sentences), 1)
+    #
+    # # ----- Document Agreement Visualization ----- #
+    # st.header("Agreement - Document " + str(doc_id) + " ({})".format(entity))
+    # display_document_agreement(_folder_root, _all_annotators, entity, doc_id, _index, match_type, threshold, boundary)
+    #
+    # # ----- Visualize Sentence Comparison ----- #
     st.header("Comparison - Sentence " + str(sent_no))
     sent_no -= 1
-    focus_entity = None
-    if fc_entity_color_only:
-        focus_entity = entity
-    display_sentence_comparison(annotators, _sentences, _triggers, _all_entities, sent_no, focus_entity)
+    st.write(sentences[sent_no].get_covered_text())
+    st.write([e.get_covered_text() for e in get_entities(uima.MEDICATION_ATTRIBUTE, doc_id, annotators[0], data)])
+    # focus_entity = None
+    # if fc_entity_color_only:
+    #     focus_entity = entity
+    # display_sentence_comparison(annotators, _sentences, _triggers, _all_entities, sent_no, focus_entity)
 
 
 main()
