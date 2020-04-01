@@ -1,7 +1,7 @@
 from functools import lru_cache
 from typing import Tuple, Iterable, Union
 from cassis import load_typesystem, load_cas_from_xmi
-from cassis.cas import FeatureStructure, Cas
+from cassis.cas import FeatureStructure, Cas, TypeSystem
 
 TYPE_SYSTEM = "TypeSystem.xml"
 MEDICATION_ENTITY = "webanno.custom.MedicationEntity"
@@ -84,6 +84,10 @@ class MedicationEntity(WebAnnoLayer):
             cas
         )
 
+    @property
+    def type(self):
+        return self.get_fs_property(MEDICATION_ENTITY_TYPE)
+
 
 class MedicationAttribute(WebAnnoLayer):
     def __init__(self, fs, cas):
@@ -94,6 +98,10 @@ class MedicationAttribute(WebAnnoLayer):
             fs,
             cas
         )
+
+    @property
+    def type(self):
+        return self.get_fs_property(MEDICATION_ATTRIBUTE_TYPE)
 
 
 LAYER_DICT = {

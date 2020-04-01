@@ -3,15 +3,13 @@
 import io
 import streamlit as st
 
-from typing import Iterable
+from typing import Union, List
 from spacy import displacy
 from seaborn import color_palette
 
 from deserialize import get_project_files
 import uima
-from uima import gather_annotations
 from uima import load_cas_from_xmi, load_typesystem
-from uima import MedicationEntity, MedicationAttribute
 
 
 TYPE_SYSTEM_FILE_NAME = "TypeSystem.xml"
@@ -60,19 +58,32 @@ def return_html(sentence, triggers, entity_list, focus_entity):
     return displacy.render(ex, style="ent", manual=True, minify=True, options={"colors": _colors})
 
 
-@st.cache
-def get_entities(entity_type: str, document: str, user: str, data: dict):
-    type_system = load_typesystem(str(data.get(TYPE_SYSTEM_KEY), 'utf-8'))
-    cas = load_cas_from_xmi(str(data.get("{}-{}".format(document, user)), 'utf-8'), type_system)
-    return [e for e in cas.select(entity_type)]
+@st.cache()
+def get_entities(entity_type: str, document: str, user: Union[str, List[str]], data: dict):
+    entities = list()
+    cas = None
+    if isinstance(user, str):
+        user = [user]
+    for u in user:
+        cas = load_cas_from_data(document, u, data)
+        entities.extend([uima.LAYER_DICT[entity_type](e, cas) for e in cas.select(entity_type)])
+    return entities
 
 
-@st.cache
+@st.cache()
 def get_all_sentences(document: str, data: dict) -> list:
-    key = [k for k in data.keys() if k.startswith(document)][0]
-    type_system = load_typesystem(str(data.get(TYPE_SYSTEM_KEY), 'utf-8'))
-    cas = load_cas_from_xmi(str(data.get(key), 'utf-8'), type_system)
+    cas = load_cas_from_data(document, data.get(USERS_KEY)[0], data)
     return [s for s in cas.select(SENTENCE_TYPE)]
+
+
+@st.cache()
+def load_cas_from_data(document: str, user: str, data: dict) -> uima.Cas:
+    return load_cas_from_xmi(str(data.get("{}-{}".format(document, user)), 'utf-8'), load_typesystem_from_data(data))
+
+
+@st.cache()
+def load_typesystem_from_data(data: dict) -> uima.TypeSystem:
+    return load_typesystem(str(data.get(TYPE_SYSTEM_KEY), 'utf-8'))
 
 
 @st.cache(hash_funcs={io.BytesIO: hash})
@@ -133,7 +144,7 @@ def main():
     st.header("Comparison - Sentence " + str(sent_no))
     sent_no -= 1
     st.write(sentences[sent_no].get_covered_text())
-    st.write([e.get_covered_text() for e in get_entities(uima.MEDICATION_ATTRIBUTE, doc_id, annotators[0], data)])
+    st.write([e for e in get_entities(uima.MEDICATION_ENTITY, doc_id, annotators, data)])
     # focus_entity = None
     # if fc_entity_color_only:
     #     focus_entity = entity
