@@ -1,16 +1,8 @@
 from functools import lru_cache
 from typing import Tuple, Iterable, Union
-from cassis import load_typesystem, load_cas_from_xmi
 from cassis.cas import FeatureStructure, Cas, TypeSystem
-
-TYPE_SYSTEM = "TypeSystem.xml"
-MEDICATION_ENTITY = "webanno.custom.MedicationEntity"
-MEDICATION_ENTITY_TYPE = "drugType"
-MEDICATION_ENTITY_IS_RECOMMENDATION = "isRecommendation"
-MEDICATION_ENTITY_IS_LIST = "isList"
-MEDICATION_ATTRIBUTE = "webanno.custom.MedicationAttribute"
-MEDICATION_ATTRIBUTE_TYPE = "attributeType"
-MEDICATION_ATTRIBUTE_RELATION = "relationType"
+from cassis import load_cas_from_xmi, load_typesystem
+import app_constants.constants as const
 
 
 class WebAnnoLayer:
@@ -76,37 +68,38 @@ class WebAnnoLayer:
 class MedicationEntity(WebAnnoLayer):
     def __init__(self, fs, cas):
         super().__init__(
-            MEDICATION_ENTITY,
-            [(MEDICATION_ENTITY_TYPE, str),
-             (MEDICATION_ENTITY_IS_LIST, bool),
-             (MEDICATION_ENTITY_IS_RECOMMENDATION, bool)],
+            const.LayerTypes.MEDICATION_ENTITY,
+            [(const.LayerProperties.MEDICATION_ENTITY_TYPE, str),
+             (const.LayerProperties.MEDICATION_ENTITY_IS_LIST, bool),
+             (const.LayerProperties.MEDICATION_ENTITY_IS_RECOMMENDATION, bool)],
             fs,
             cas
         )
 
     @property
     def type(self):
-        return self.get_fs_property(MEDICATION_ENTITY_TYPE)
+        return self.get_fs_property(const.LayerProperties.MEDICATION_ENTITY_TYPE)
 
 
 class MedicationAttribute(WebAnnoLayer):
     def __init__(self, fs, cas):
         super().__init__(
-            MEDICATION_ATTRIBUTE,
-            [(MEDICATION_ATTRIBUTE_TYPE, str),
-             (MEDICATION_ATTRIBUTE_RELATION, [LAYER_DICT.get(MEDICATION_ENTITY)])],
+            const.LayerTypes.MEDICATION_ATTRIBUTE,
+            [(const.LayerProperties.MEDICATION_ATTRIBUTE_TYPE, str),
+             (const.LayerProperties.MEDICATION_ATTRIBUTE_RELATION,
+              [LAYER_DICT.get(const.LayerTypes.MEDICATION_ENTITY)])],
             fs,
             cas
         )
 
     @property
     def type(self):
-        return self.get_fs_property(MEDICATION_ATTRIBUTE_TYPE)
+        return self.get_fs_property(const.LayerProperties.MEDICATION_ATTRIBUTE_TYPE)
 
 
 LAYER_DICT = {
-    MEDICATION_ENTITY: MedicationEntity,
-    MEDICATION_ATTRIBUTE: MedicationAttribute
+    const.LayerTypes.MEDICATION_ENTITY: MedicationEntity,
+    const.LayerTypes.MEDICATION_ATTRIBUTE: MedicationAttribute
 }
 
 
@@ -116,4 +109,3 @@ def gather_annotations(annotation_type: str, cas: Cas):
     for _fs in cas.select(annotation_type):
         alist.append(LAYER_DICT.get(annotation_type)(_fs, cas))
     return alist
-

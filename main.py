@@ -1,22 +1,16 @@
 # -*- coding: utf-8 -*-
 
 import io
-import streamlit as st
+from typing import Union, List, IO
+from collections import defaultdict
 
-from typing import Union, List
+import streamlit as st
 from spacy import displacy
 from seaborn import color_palette
 
-from deserialize import get_project_files
 import uima
-from uima import load_cas_from_xmi, load_typesystem
-
-
-TYPE_SYSTEM_FILE_NAME = "TypeSystem.xml"
-USERS_KEY = "users"
-DOCUMENTS_KEY = "documents"
-TYPE_SYSTEM_KEY = "type_system"
-SENTENCE_TYPE = "de.tudarmstadt.ukp.dkpro.core.api.segmentation.type.Sentence"
+import app_constants.constants as const
+from deserialize import get_project_files
 
 
 def display_sentence_comparison(annotators, sentences, triggers, entities, sent_no, focus_entity=None):
@@ -58,52 +52,61 @@ def return_html(sentence, triggers, entity_list, focus_entity):
     return displacy.render(ex, style="ent", manual=True, minify=True, options={"colors": _colors})
 
 
-@st.cache()
-def get_entities(entity_type: str, document: str, user: Union[str, List[str]], data: dict):
-    entities = list()
-    cas = None
-    if isinstance(user, str):
-        user = [user]
-    for u in user:
-        cas = load_cas_from_data(document, u, data)
-        entities.extend([uima.LAYER_DICT[entity_type](e, cas) for e in cas.select(entity_type)])
-    return entities
+def get_annotations_for_sentence(document: str, sentence: int, user: str, data: dict):
+    pass
 
 
-@st.cache()
-def get_all_sentences(document: str, data: dict) -> list:
-    cas = load_cas_from_data(document, data.get(USERS_KEY)[0], data)
-    return [s for s in cas.select(SENTENCE_TYPE)]
+def get_sentence_text(document: str, sentence: int, data: dict):
+    return get_sentences_for_document(document, data)[sentence].covered_text()
 
 
-@st.cache()
-def load_cas_from_data(document: str, user: str, data: dict) -> uima.Cas:
-    return load_cas_from_xmi(str(data.get("{}-{}".format(document, user)), 'utf-8'), load_typesystem_from_data(data))
+def get_sentences_for_document(document: str, data: dict) -> list:
+    return data.get(const.Keys.ANNOTATIONS)[document].get(const.Keys.SENTENCES)
 
 
-@st.cache()
-def load_typesystem_from_data(data: dict) -> uima.TypeSystem:
-    return load_typesystem(str(data.get(TYPE_SYSTEM_KEY), 'utf-8'))
+def get_annotation_layer(cas: uima.Cas, layer: str) -> list:
+    return [annotation for annotation in cas.select(layer)]
 
 
 @st.cache(hash_funcs={io.BytesIO: hash})
 def load_data(zip_file: str) -> dict:
-    documents = list()
-    users = set()
     data_dict = dict()
+    annotations = defaultdict(dict)
+    documents_ids = set()
+    user_ids = set()
+    type_system = None
+    # -> load type system first
     for document, value in get_project_files(zip_file).items():
-        if document == TYPE_SYSTEM_FILE_NAME:
-            data_dict[TYPE_SYSTEM_KEY] = value.read()
-        else:
+        if document == const.FileNames.TYPE_SYSTEM:
+            type_system = uima.load_typesystem(str(value.read(), 'utf-8'))
+            data_dict[const.Keys.TYPE_SYSTEM] = type_system
+            break
+    if not type_system:
+        # ToDo: implement error when no type system encountered
+        pass
+    # -> then analyze the CASes
+    for document, value in get_project_files(zip_file).items():
+        if document != const.FileNames.TYPE_SYSTEM:
             document = "".join(document.split(".")[:-1])
-            documents.append(document)
+            documents_ids.add(document)
+            annotations[document][const.Keys.SENTENCES] = None
             for user, xmi_bytes in value.items():
                 user = "".join(user.split(".")[:-1])
-                users.add(user)
-                data_dict["{}-{}".format(document, user)] = xmi_bytes.read()
+                user_ids.add(user)
+                cas = uima.load_cas_from_xmi(xmi_bytes, type_system)
+                if annotations[document][const.Keys.SENTENCES] is None:
+                    # -> add sentence layer annotation to data
+                    annotations[document][const.Keys.SENTENCES] = get_annotation_layer(cas, const.LayerTypes.SENTENCE)
+                # -> add annotation for different layers to specific user
+                user_annotations = list()
+                for layer, obj in uima.LAYER_DICT.items():
+                    for anno in get_annotation_layer(cas, layer):
+                        user_annotations.append(obj(anno, cas))
+                annotations[document][user] = user_annotations
 
-    data_dict[DOCUMENTS_KEY] = sorted(documents)
-    data_dict[USERS_KEY] = sorted(users)
+    data_dict[const.Keys.ANNOTATIONS] = annotations
+    data_dict[const.Keys.DOCUMENT_ID] = sorted(documents_ids)
+    data_dict[const.Keys.USER_ID] = sorted(user_ids)
     return data_dict
 
 
@@ -111,44 +114,43 @@ def main():
     data = None
     # ----- Sidebar ----- #
     fis = st.sidebar.file_uploader("Upload test data")
-    # Todo: implement deserializing from project zip file
     if fis is not None:
         data = load_data(fis)
         st.write(data)
 
     st.sidebar.subheader("General")
     # --> Document Selection
-    doc_id = st.sidebar.selectbox("Select document", data.get(DOCUMENTS_KEY))
-    # --> Entity Selection
-    # _doc_entities, _doc_entity_counts = get_entities(_folder_root, _all_annotators, doc_id, _index)
-    # entity = create_selectbox_with_counts(_doc_entities, _doc_entity_counts)
-    # fc_entity_color_only = st.sidebar.checkbox("Color only focus entity", False)
-    # # --> Agreement Properties
-    # st.sidebar.subheader("Agreement Properties")
-    # match_type = select_match_type()
-    # threshold, boundary = 0, 0
-    # if match_type == "one_all":
-    #     threshold, boundary = get_threshold_boundary(_all_annotators)
-    # --> Annotator Selection
-    st.sidebar.subheader("Sentences")
-    annotators = st.sidebar.multiselect("Select annotators", options=data.get(USERS_KEY), default=data.get(USERS_KEY))
+    doc_id = st.sidebar.selectbox("Select document", data.get(const.Keys.DOCUMENT_ID))
+#     # --> Entity Selection
+#     # _doc_entities, _doc_entity_counts = get_entities(_folder_root, _all_annotators, doc_id, _index)
+#     # entity = create_selectbox_with_counts(_doc_entities, _doc_entity_counts)
+#     # fc_entity_color_only = st.sidebar.checkbox("Color only focus entity", False)
+#     # # --> Agreement Properties
+#     # st.sidebar.subheader("Agreement Properties")
+#     # match_type = select_match_type()
+#     # threshold, boundary = 0, 0
+#     # if match_type == "one_all":
+#     #     threshold, boundary = get_threshold_boundary(_all_annotators)
+#     # --> Annotator Selection
+#     st.sidebar.subheader("Sentences")
+#     annotators = st.sidebar.multiselect("Select annotators", options=data.get(app_constants.Keys.USERS),
+#                                         default=data.get(app_constants.Keys.USERS))
     # --> Sentence Selection
-    sentences = get_all_sentences(doc_id, data)
-    sent_no = st.sidebar.slider("Sentence no.", 1, len(sentences), 1)
-    #
-    # # ----- Document Agreement Visualization ----- #
-    # st.header("Agreement - Document " + str(doc_id) + " ({})".format(entity))
-    # display_document_agreement(_folder_root, _all_annotators, entity, doc_id, _index, match_type, threshold, boundary)
-    #
-    # # ----- Visualize Sentence Comparison ----- #
-    st.header("Comparison - Sentence " + str(sent_no))
-    sent_no -= 1
-    st.write(sentences[sent_no].get_covered_text())
-    st.write([e for e in get_entities(uima.MEDICATION_ENTITY, doc_id, annotators, data)])
-    # focus_entity = None
-    # if fc_entity_color_only:
-    #     focus_entity = entity
-    # display_sentence_comparison(annotators, _sentences, _triggers, _all_entities, sent_no, focus_entity)
+    sent_no = st.sidebar.slider("Sentence no.", 1, len(get_sentences_for_document(doc_id, data)), 1)
+#     #
+#     # # ----- Document Agreement Visualization ----- #
+#     # st.header("Agreement - Document " + str(doc_id) + " ({})".format(entity))
+#     # display_document_agreement(_folder_root, _all_annotators, entity, doc_id, _index, match_type, threshold, boundary)
+#     #
+#     # # ----- Visualize Sentence Comparison ----- #
+#     st.header("Comparison - Sentence " + str(sent_no))
+#     sent_no -= 1
+#     st.write(sentences[sent_no].get_covered_text())
+#     st.write([e for e in get_entities(uima.MEDICATION_ENTITY, doc_id, annotators, data)])
+#     # focus_entity = None
+#     # if fc_entity_color_only:
+#     #     focus_entity = entity
+#     # display_sentence_comparison(annotators, _sentences, _triggers, _all_entities, sent_no, focus_entity)
 
 
 main()
