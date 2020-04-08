@@ -1,16 +1,12 @@
 # -*- coding: utf-8 -*-
 
-import io
-from typing import Union, List, IO
-from collections import defaultdict
-
+import sqlite3
 import streamlit as st
 from spacy import displacy
 from seaborn import color_palette
+from typing import Iterable
 
-import uima
 import app_constants.constants as const
-from deserialize import get_project_files
 
 
 def display_sentence_comparison(annotators, sentences, triggers, entities, sent_no, focus_entity=None):
@@ -52,91 +48,97 @@ def return_html(sentence, triggers, entity_list, focus_entity):
     return displacy.render(ex, style="ent", manual=True, minify=True, options={"colors": _colors})
 
 
-def get_annotations_for_sentence(document: str, sentence: int, user: str, data: dict):
-    pass
+@st.cache()
+def get_entity_types_for_document(sentences: Iterable):
+    return sorted(set([ent_t[0] for ent_t in get_db_connection().execute(
+        """
+        SELECT DISTINCT type
+        FROM {0}
+        WHERE sentence in {1}
+        ORDER BY type
+        """.format(const.LAYER_TNAME_DICT.get(const.LayerTypes.MEDICATION_ENTITY), tuple(s[0] for s in sentences))
+    )]))
 
 
-def get_sentence_text(document: str, sentence: int, data: dict):
-    return get_sentences_for_document(document, data)[sentence].covered_text()
+@st.cache()
+def get_sentences_for_document(doc_id: str):
+    return [(sents[0], sents[1]) for sents in get_db_connection().execute(
+        """
+        SELECT id, text
+        FROM {0}
+        WHERE document = {1}
+        ORDER BY begin;
+        """.format(const.LAYER_TNAME_DICT.get(const.LayerTypes.SENTENCE), doc_id)
+    )]
 
 
-def get_sentences_for_document(document: str, data: dict) -> list:
-    return data.get(const.Keys.ANNOTATIONS)[document].get(const.Keys.SENTENCES)
+@st.cache()
+def get_annotators():
+    return {anno[0]: anno[1] for anno in get_db_connection().execute(
+        """
+        SELECT DISTINCT {0}, id
+        FROM {1}
+        ORDER BY {0};
+        """.format(const.LayerTypes.ANNOTATOR, const.LAYER_TNAME_DICT.get(const.LayerTypes.ANNOTATOR))
+    )}
 
 
-def get_annotation_layer(cas: uima.Cas, layer: str) -> list:
-    return [annotation for annotation in cas.select(layer)]
+@st.cache()
+def get_documents():
+    return {doc[0]: doc[1] for doc in get_db_connection().execute(
+        """
+        SELECT DISTINCT {0}, id
+        FROM {1}
+        ORDER BY {0};
+        """.format(const.LayerTypes.DOCUMENT, const.LAYER_TNAME_DICT.get(const.LayerTypes.DOCUMENT))
+    )}
 
 
-@st.cache(hash_funcs={io.BytesIO: hash})
-def load_data(zip_file: str) -> dict:
-    data_dict = dict()
-    annotations = defaultdict(dict)
-    documents_ids = set()
-    user_ids = set()
-    type_system = None
-    # -> load type system first
-    for document, value in get_project_files(zip_file).items():
-        if document == const.FileNames.TYPE_SYSTEM:
-            type_system = uima.load_typesystem(str(value.read(), 'utf-8'))
-            data_dict[const.Keys.TYPE_SYSTEM] = type_system
-            break
-    if not type_system:
-        # ToDo: implement error when no type system encountered
-        pass
-    # -> then analyze the CASes
-    for document, value in get_project_files(zip_file).items():
-        if document != const.FileNames.TYPE_SYSTEM:
-            document = "".join(document.split(".")[:-1])
-            documents_ids.add(document)
-            annotations[document][const.Keys.SENTENCES] = None
-            for user, xmi_bytes in value.items():
-                user = "".join(user.split(".")[:-1])
-                user_ids.add(user)
-                cas = uima.load_cas_from_xmi(xmi_bytes, type_system)
-                if annotations[document][const.Keys.SENTENCES] is None:
-                    # -> add sentence layer annotation to data
-                    annotations[document][const.Keys.SENTENCES] = get_annotation_layer(cas, const.LayerTypes.SENTENCE)
-                # -> add annotation for different layers to specific user
-                user_annotations = list()
-                for layer, obj in uima.LAYER_DICT.items():
-                    for anno in get_annotation_layer(cas, layer):
-                        user_annotations.append(obj(anno, cas))
-                annotations[document][user] = user_annotations
+@st.cache(allow_output_mutation=True)
+def get_db_connection():
+    return sqlite3.connect("./tmp.db", check_same_thread=False)
 
-    data_dict[const.Keys.ANNOTATIONS] = annotations
-    data_dict[const.Keys.DOCUMENT_ID] = sorted(documents_ids)
-    data_dict[const.Keys.USER_ID] = sorted(user_ids)
-    return data_dict
+
+@st.cache()
+def create_temporary_db(db_file_io):
+    print("Create temporary db file")
+    with open("./tmp.db", 'wb') as tmp:
+        tmp.write(db_file_io.read())
 
 
 def main():
-    data = None
     # ----- Sidebar ----- #
-    fis = st.sidebar.file_uploader("Upload test data")
+    fis = st.sidebar.file_uploader("Upload db file")
     if fis is not None:
-        data = load_data(fis)
-        st.write(data)
-
-    st.sidebar.subheader("General")
-    # --> Document Selection
-    doc_id = st.sidebar.selectbox("Select document", data.get(const.Keys.DOCUMENT_ID))
-#     # --> Entity Selection
-#     # _doc_entities, _doc_entity_counts = get_entities(_folder_root, _all_annotators, doc_id, _index)
-#     # entity = create_selectbox_with_counts(_doc_entities, _doc_entity_counts)
-#     # fc_entity_color_only = st.sidebar.checkbox("Color only focus entity", False)
-#     # # --> Agreement Properties
-#     # st.sidebar.subheader("Agreement Properties")
-#     # match_type = select_match_type()
-#     # threshold, boundary = 0, 0
-#     # if match_type == "one_all":
-#     #     threshold, boundary = get_threshold_boundary(_all_annotators)
-#     # --> Annotator Selection
-#     st.sidebar.subheader("Sentences")
-#     annotators = st.sidebar.multiselect("Select annotators", options=data.get(app_constants.Keys.USERS),
-#                                         default=data.get(app_constants.Keys.USERS))
-    # --> Sentence Selection
-    sent_no = st.sidebar.slider("Sentence no.", 1, len(get_sentences_for_document(doc_id, data)), 1)
+        create_temporary_db(fis)
+        st.sidebar.subheader("General")
+        # --> Document Selection
+        # -----> doc_dict = dict(document_name: document_id)
+        doc_dict = get_documents()
+        doc_name = st.sidebar.selectbox("Select document", sorted(doc_dict.keys()))
+        doc_id = doc_dict.get(doc_name)
+        # --> Entity Selection
+        # -----> sent_list = list(tuple(sentence_id, sentence_text))
+        sents_list = get_sentences_for_document(doc_id)
+        # ----->
+        entities_set = get_entity_types_for_document(sents_list)
+        st.write(entities_set)
+        #     # entity = create_selectbox_with_counts(_doc_entities, _doc_entity_counts)
+        #     # fc_entity_color_only = st.sidebar.checkbox("Color only focus entity", False)
+        #     # # --> Agreement Properties
+        #     # st.sidebar.subheader("Agreement Properties")
+        #     # match_type = select_match_type()
+        #     # threshold, boundary = 0, 0
+        #     # if match_type == "one_all":
+        #     #     threshold, boundary = get_threshold_boundary(_all_annotators)
+        st.sidebar.subheader("Sentences")
+        # --> Annotator Selection
+        # -----> anno_dict = dict(annotator_name: annotator_id)
+        anno_dict = get_annotators()
+        annotators = st.sidebar.multiselect("Select annotators",
+                                            options=list(anno_dict.keys()), default=list(anno_dict.keys()))
+        # --> Sentence Selection
+        sent_no = st.sidebar.slider("Sentence no.", 1, len(sents_list), 1)
 #     #
 #     # # ----- Document Agreement Visualization ----- #
 #     # st.header("Agreement - Document " + str(doc_id) + " ({})".format(entity))
