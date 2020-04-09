@@ -5,16 +5,17 @@ import sqlite3
 import streamlit as st
 from spacy import displacy
 from seaborn import color_palette
-from typing import List, Dict, Tuple, OrderedDict
+from typing import List, Dict, Tuple, OrderedDict, Union
 
 import app_constants.constants as const
 
 
-def display_sentence_comparison(annotation_dict: dict, sentence: str, id2anno: dict):
+def display_sentence_comparison(annotation_dict: dict, sentence: str, id2anno: dict,
+                                e_focus: Union[None, str], a_focus: Union[None, str]):
     for annotator_id, entities_dict in annotation_dict.items():
         st.subheader(id2anno.get(annotator_id))
         st.write(
-            return_html(sentence=sentence, entities=entities_dict),
+            return_html(sentence=sentence, entities=entities_dict, focus_entity=e_focus, focus_attribute=a_focus),
             unsafe_allow_html=True
         )
 
@@ -34,7 +35,7 @@ def get_color_dict():
 
 
 @st.cache()
-def return_html(sentence, entities):
+def return_html(sentence, entities, focus_entity, focus_attribute):
     ex = [{
         "text": sentence,
         "ents": [{
@@ -44,25 +45,30 @@ def return_html(sentence, entities):
         } for e in entities.values()]
     }]
     colors = get_color_dict()
-    # if focus_entity is not None:
-    #     _colors = {vk[0]: vk[1] for vk in _colors.items() if vk[0] == focus_entity.upper()}
+    if focus_entity is not None:
+        focus_entity = focus_entity.upper()
+    if focus_attribute is not None:
+        focus_attribute = focus_attribute.upper()
+    if focus_entity is not None or focus_attribute is not None:
+        colors = {vk[0]: vk[1] for vk in colors.items()
+                  if vk[0] == focus_entity or vk[0] == focus_attribute}
     return displacy.render(ex, style="ent", manual=True, minify=True, options={"colors": colors})
 
 
 @st.cache()
-def get_entity_types_for_document(sentences: List) -> List[str]:
+def get_annotation_types_for_document(sentences: List, anno_layer: str) -> List[str]:
     where_clause = "WHERE sentence in {}".format(tuple(sentences))
     if len(sentences) == 1:
         where_clause = "WHERE sentence = '{}'".format(sentences[0])
     if len(sentences) == 0:
         return []
-    return sorted(set([ent_t[0] for ent_t in get_db_connection().execute(
+    return sorted(set([anno_t[0] for anno_t in get_db_connection().execute(
         """
         SELECT DISTINCT type
         FROM {0}
         {1}
         ORDER BY type;
-        """.format(const.LAYER_TNAME_DICT.get(const.LayerTypes.MEDICATION_ENTITY), where_clause)
+        """.format(const.LAYER_TNAME_DICT.get(anno_layer), where_clause)
     )]))
 
 
@@ -86,15 +92,18 @@ def get_annotations_for_sentence(anno_ids: List[str], sent_id: str):
     if len(anno_ids) == 0:
         return {}
     annotations = collections.defaultdict(dict)
-    for anno_type in [const.LayerTypes.MEDICATION_ENTITY, const.LayerTypes.MEDICATION_ATTRIBUTE]:
-        table = const.LAYER_TNAME_DICT.get(anno_type)
-        for result in get_db_connection().execute(
-            """
-            SELECT id, annotator, begin, end, type
-            FROM {0}
-            WHERE sentence = '{1}'{2};
-        """.format(table, sent_id, where_and_clause)):
-            annotations[result[1]][result[0]] = {"begin": result[2], "end": result[3], "type": result[4]}
+    for result in get_db_connection().execute(
+        """
+        SELECT id, annotator, begin, end, type FROM {0}
+        WHERE sentence = '{2}'{3}
+        UNION ALL
+        SELECT id, annotator, begin, end, type FROM {1}
+        WHERE sentence = '{2}'{3}
+        ORDER BY begin;
+    """.format(const.LAYER_TNAME_DICT.get(const.LayerTypes.MEDICATION_ENTITY),
+               const.LAYER_TNAME_DICT.get(const.LayerTypes.MEDICATION_ATTRIBUTE),
+               sent_id, where_and_clause)):
+        annotations[result[1]][result[0]] = {"begin": result[2], "end": result[3], "type": result[4]}
     return annotations
 
 
@@ -164,10 +173,13 @@ def main():
         sents_dict = get_sentences_for_document(doc_id)
         sents_with_anno = get_sentences_with_annotations(doc_id)
         # -----> unique_sorted_list(entity_types)
-        entities_set = get_entity_types_for_document(sents_with_anno)
+        entities_set = get_annotation_types_for_document(sents_with_anno, const.LayerTypes.MEDICATION_ENTITY)
         focus_entity = st.sidebar.selectbox("Select focus entity", options=entities_set)
         fc_entity_color_only = st.sidebar.checkbox("Color only focus entity", False)
-        #     # # --> Agreement Properties
+        attributes_set = get_annotation_types_for_document(sents_with_anno, const.LayerTypes.MEDICATION_ATTRIBUTE)
+        focus_attribute = st.sidebar.selectbox("Select focus attribute", options=attributes_set)
+        fc_attribute_color_only = st.sidebar.checkbox("Color only focus attribute", False)
+        # --> Agreement Properties
         #     # st.sidebar.subheader("Agreement Properties")
         #     # match_type = select_match_type()
         #     # threshold, boundary = 0, 0
@@ -181,6 +193,7 @@ def main():
                           st.sidebar.multiselect("Select annotators",
                                                  options=list(anno2id_dict.keys()), default=list(anno2id_dict.keys()))]
         # ----- Document Agreement Visualization ----- #
+        # ToDo: agreement calculation
         st.header("Document")
         if show_complete:
             st.write([s for s in sents_dict.values()])
@@ -198,14 +211,13 @@ def main():
             sent_id = sents_with_anno[sent_no - 1]
             st.header("Sentences (Nr: {})".format(str(sent_id.split("-")[-1])))
             annotation_dict = get_annotations_for_sentence(sel_annotators, sent_id)
-            display_sentence_comparison(annotation_dict, sents_dict.get(sent_id), id2anno_dict)
 
-
-#     st.write([e for e in get_entities(uima.MEDICATION_ENTITY, doc_id, annotators, data)])
-#     # focus_entity = None
-#     # if fc_entity_color_only:
-#     #     focus_entity = entity
-#     # display_sentence_comparison(annotators, _sentences, _triggers, _all_entities, sent_no, focus_entity)
-
+            e_focus = None
+            a_focus = None
+            if fc_entity_color_only:
+                e_focus = focus_entity
+            if fc_attribute_color_only:
+                a_focus = focus_attribute
+            display_sentence_comparison(annotation_dict, sents_dict.get(sent_id), id2anno_dict, e_focus, a_focus)
 
 main()
