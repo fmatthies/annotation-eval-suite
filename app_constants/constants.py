@@ -41,7 +41,8 @@ TABLES = {
             begin integer NOT NULL,
             end integer NOT NULL,
             document text NOT NULL,
-            text text NOT NULL
+            text text NOT NULL,
+            has_annotation integer
         );""",
         "idx": []
     },
@@ -53,6 +54,7 @@ TABLES = {
             end integer NOT NULL,
             text text NOT NULL,
             sentence text NOT NULL,
+            document text NOT NULL,
             type text NOT NULL,
             list integer NOT NULL,
             recommendation integer NOT NULL,
@@ -69,6 +71,7 @@ TABLES = {
             end integer NOT NULL,
             text text NOT NULL,
             sentence text NOT NULL,
+            document text NOT NULL,
             type text NOT NULL,
             FOREIGN KEY (sentence) REFERENCES sentences (id),
             FOREIGN KEY (annotator) REFERENCES annotators (id)
