@@ -61,7 +61,7 @@ TABLES = {
             FOREIGN KEY (sentence) REFERENCES sentences (id),
             FOREIGN KEY (annotator) REFERENCES annotators (id)
         );""",
-        "idx": ["type"]
+        "idx": ["type", "sentence"]
     },
     "medication_attributes": {
         "stm": """(
@@ -76,7 +76,7 @@ TABLES = {
             FOREIGN KEY (sentence) REFERENCES sentences (id),
             FOREIGN KEY (annotator) REFERENCES annotators (id)
         );""",
-        "idx": ["type"]
+        "idx": ["type", "sentence"]
     },
     "relations": {
         "stm": """(
@@ -95,14 +95,14 @@ TABLES = {
             id text PRIMARY KEY,
             annotator text NOT NULL
         );""",
-        "idx": ["id"]
+        "idx": []
     },
     "documents": {
         "stm": """(
             id text PRIMARY KEY,
             document text NOT NULL
         );""",
-        "idx": ["id"]
+        "idx": []
     }
 }
 

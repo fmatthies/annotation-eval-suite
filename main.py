@@ -44,14 +44,19 @@ def return_html(sentence, triggers, entity_list, focus_entity):
 
 
 @st.cache()
-def get_entity_types_for_document(sentences: Iterable) -> List[str]:
+def get_entity_types_for_document(sentences: List) -> List[str]:
+    where_clause = "WHERE sentence in {}".format(tuple(sentences))
+    if len(sentences) == 1:
+        where_clause = "WHERE sentence = '{}'".format(sentences[0])
+    if len(sentences) == 0:
+        return []
     return sorted(set([ent_t[0] for ent_t in get_db_connection().execute(
         """
         SELECT DISTINCT type
         FROM {0}
-        WHERE sentence in {1}
-        ORDER BY type
-        """.format(const.LAYER_TNAME_DICT.get(const.LayerTypes.MEDICATION_ENTITY), tuple(sentences))
+        {1}
+        ORDER BY type;
+        """.format(const.LAYER_TNAME_DICT.get(const.LayerTypes.MEDICATION_ENTITY), where_clause)
     )]))
 
 
@@ -61,14 +66,30 @@ def get_sentences_for_document(doc_id: str) -> OrderedDict[str, str]:
         """
         SELECT id, text
         FROM {0}
-        WHERE document = {1}
+        WHERE document = '{1}'
         ORDER BY begin;
         """.format(const.LAYER_TNAME_DICT.get(const.LayerTypes.SENTENCE), doc_id)
     ))
 
 
-# @st.cache()
-# def get_annotations_for_annotator(anno_id: str)
+@st.cache()
+def get_annotations_for_sentence(anno_ids: List[str], sent_id: str):
+    where_and_clause = " AND annotator in {}".format(tuple(anno_ids))
+    if len(anno_ids) == 1:
+        where_and_clause = " AND annotator = '{}'".format(anno_ids[0])
+    if len(anno_ids) == 0:
+        return {}
+    annotations = collections.defaultdict(dict)
+    for anno_type in [const.LayerTypes.MEDICATION_ENTITY, const.LayerTypes.MEDICATION_ATTRIBUTE]:
+        table = const.LAYER_TNAME_DICT.get(anno_type)
+        for result in get_db_connection().execute(
+            """
+            SELECT id, annotator, begin, end, type
+            FROM {0}
+            WHERE sentence = '{1}'{2};
+        """.format(table, sent_id, where_and_clause)):
+            annotations[result[1]][result[0]] = {"begin": result[2], "end": result[3], "type": result[4]}
+    return annotations
 
 
 @st.cache()
@@ -77,7 +98,7 @@ def get_sentences_with_annotations(doc_id: str) -> List[str]:
         """
         SELECT id
         FROM {0}
-        WHERE document = {1} AND has_annotation = 1
+        WHERE document = '{1}' AND has_annotation = 1;
         """.format(const.LAYER_TNAME_DICT.get(const.LayerTypes.SENTENCE), doc_id)
     )]
 
@@ -148,29 +169,30 @@ def main():
         # --> Annotator Selection
         # -----> anno_dict = dict(annotator_name: annotator_id)
         anno_dict = get_annotators()
-        annotators = st.sidebar.multiselect("Select annotators",
-                                            options=list(anno_dict.keys()), default=list(anno_dict.keys()))
+        sel_annotators = [anno_dict.get(a_id) for a_id in
+                          st.sidebar.multiselect("Select annotators",
+                                                 options=list(anno_dict.keys()), default=list(anno_dict.keys()))]
         # ----- Document Agreement Visualization ----- #
         st.header("Document")
         if show_complete:
-            st.write(["\n".join([s for s in sents_dict.values()])])
+            st.write([s for s in sents_dict.values()])
         else:
             st.info("Select 'Show complete document' in the sidebar")
-#     # st.header("Agreement - Document " + str(doc_id) + " ({})".format(entity))
-#     # display_document_agreement(_folder_root, _all_annotators, entity, doc_id, _index, match_type, threshold, boundary)
-#     #
         # # ----- Visualize Sentence Comparison ----- #
         sent_id = sents_with_anno[0] if len(sents_with_anno) >= 1 else None
         # --> Sentence Selection
-        if len(sents_with_anno) <= 0:
+        if not sent_id:
             st.header("Sentences")
             st.sidebar.info("No sentences with annotations in this document")
             st.info("Sentence comparison not available")
         else:
-            sent_no = st.sidebar.slider("Sentence no.", 1, len(sents_with_anno), 1)
+            sent_no = st.sidebar.slider("Sentence selection", 1, len(sents_with_anno), 1)
             sent_id = sents_with_anno[sent_no - 1]
             st.header("Sentences (Nr: {})".format(str(sent_id.split("-")[-1])))
             st.write(sents_dict.get(sent_id))
+            st.write(get_annotations_for_sentence(sel_annotators, sent_id))
+
+
 #     st.write([e for e in get_entities(uima.MEDICATION_ENTITY, doc_id, annotators, data)])
 #     # focus_entity = None
 #     # if fc_entity_color_only:
