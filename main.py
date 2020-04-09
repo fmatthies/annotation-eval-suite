@@ -45,10 +45,8 @@ def return_html(sentence, entities, focus_entity, focus_attribute):
         } for e in entities.values()]
     }]
     colors = get_color_dict()
-    if focus_entity is not None:
-        focus_entity = focus_entity.upper()
-    if focus_attribute is not None:
-        focus_attribute = focus_attribute.upper()
+    focus_entity = focus_entity.upper() if focus_entity else None
+    focus_attribute = focus_attribute.upper() if focus_attribute else None
     if focus_entity is not None or focus_attribute is not None:
         colors = {vk[0]: vk[1] for vk in colors.items()
                   if vk[0] == focus_entity or vk[0] == focus_attribute}
