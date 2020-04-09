@@ -5,42 +5,48 @@ import sqlite3
 import streamlit as st
 from spacy import displacy
 from seaborn import color_palette
-from typing import Iterable, List, Dict, Tuple, OrderedDict
+from typing import List, Dict, Tuple, OrderedDict
 
 import app_constants.constants as const
 
 
-def display_sentence_comparison(annotators, sentences, triggers, entities, sent_no, focus_entity=None):
-    for _annotator, _values in triggers[sent_no].items():
-        if _annotator in annotators:
-            st.subheader(_annotator)
-            st.write(
-                return_html(sentence=sentences[sent_no], triggers=_values,
-                            entity_list=entities, focus_entity=focus_entity),
-                unsafe_allow_html=True
-            )
+def display_sentence_comparison(annotation_dict: dict, sentence: str, id2anno: dict):
+    for annotator_id, entities_dict in annotation_dict.items():
+        st.subheader(id2anno.get(annotator_id))
+        st.write(
+            return_html(sentence=sentence, entities=entities_dict),
+            unsafe_allow_html=True
+        )
 
 
 @st.cache()
-def get_color_dict(entity_list):
-    colors = color_palette('colorblind', len(entity_list)).as_hex()
-    return {entity_list[i]: colors[i] for i in range(len(entity_list))}
+def get_color_dict():
+    entities = set()
+    for anno_type in [const.LayerTypes.MEDICATION_ENTITY, const.LayerTypes.MEDICATION_ATTRIBUTE]:
+        entities.update(set([ent_t[0] for ent_t in get_db_connection().execute(
+            """
+            SELECT DISTINCT type
+            FROM {0};
+            """.format(const.LAYER_TNAME_DICT.get(anno_type))
+        )]))
+    colors = color_palette('colorblind', len(entities)).as_hex()
+    return {entity.upper(): color for entity, color in zip(entities, colors)}
 
 
 @st.cache()
-def return_html(sentence, triggers, entity_list, focus_entity):
+def return_html(sentence, entities):
     ex = [{
         "text": sentence,
         "ents": [{
-            "start": t[2][0][0],
-            "end": t[2][0][1],
-            "label": t[1]
-        } for t in triggers]
+            "start": e.get("begin"),
+            "end": e.get("end"),
+            "label": e.get("type")
+        } for e in entities.values()]
     }]
-    _colors = get_color_dict(entity_list)
-    if focus_entity is not None:
-        _colors = {vk[0]: vk[1] for vk in _colors.items() if vk[0] == focus_entity.upper()}
-    return displacy.render(ex, style="ent", manual=True, minify=True, options={"colors": _colors})
+    colors = get_color_dict()
+    # if focus_entity is not None:
+    #     _colors = {vk[0]: vk[1] for vk in _colors.items() if vk[0] == focus_entity.upper()}
+    return displacy.render(ex, style="ent", manual=True, minify=True, options={"colors": colors})
 
 
 @st.cache()
@@ -104,14 +110,16 @@ def get_sentences_with_annotations(doc_id: str) -> List[str]:
 
 
 @st.cache()
-def get_annotators() -> Dict[str, str]:
-    return {anno[0]: anno[1] for anno in get_db_connection().execute(
+def get_annotators() -> Tuple[Dict[str, str], Dict[str, str]]:
+    anno2id = {anno[0]: anno[1] for anno in get_db_connection().execute(
         """
         SELECT DISTINCT {0}, id
         FROM {1}
         ORDER BY {0};
         """.format(const.LayerTypes.ANNOTATOR, const.LAYER_TNAME_DICT.get(const.LayerTypes.ANNOTATOR))
     )}
+    id2anno = {v: k for k, v in anno2id.items()}
+    return anno2id, id2anno
 
 
 @st.cache()
@@ -167,11 +175,11 @@ def main():
         #     #     threshold, boundary = get_threshold_boundary(_all_annotators)
         st.sidebar.subheader("Sentences")
         # --> Annotator Selection
-        # -----> anno_dict = dict(annotator_name: annotator_id)
-        anno_dict = get_annotators()
-        sel_annotators = [anno_dict.get(a_id) for a_id in
+        # -----> anno2id_dict = dict(annotator_name: annotator_id)
+        anno2id_dict, id2anno_dict = get_annotators()
+        sel_annotators = [anno2id_dict.get(a_id) for a_id in
                           st.sidebar.multiselect("Select annotators",
-                                                 options=list(anno_dict.keys()), default=list(anno_dict.keys()))]
+                                                 options=list(anno2id_dict.keys()), default=list(anno2id_dict.keys()))]
         # ----- Document Agreement Visualization ----- #
         st.header("Document")
         if show_complete:
@@ -189,8 +197,8 @@ def main():
             sent_no = st.sidebar.slider("Sentence selection", 1, len(sents_with_anno), 1)
             sent_id = sents_with_anno[sent_no - 1]
             st.header("Sentences (Nr: {})".format(str(sent_id.split("-")[-1])))
-            st.write(sents_dict.get(sent_id))
-            st.write(get_annotations_for_sentence(sel_annotators, sent_id))
+            annotation_dict = get_annotations_for_sentence(sel_annotators, sent_id)
+            display_sentence_comparison(annotation_dict, sents_dict.get(sent_id), id2anno_dict)
 
 
 #     st.write([e for e in get_entities(uima.MEDICATION_ENTITY, doc_id, annotators, data)])
