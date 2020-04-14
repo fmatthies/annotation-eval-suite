@@ -8,6 +8,8 @@ class LayerTypes(Constant):
     RELATION = "webanno.custom.MedicationAttributeRelationTypeLink"
     ANNOTATOR = "annotator"
     DOCUMENT = "document"
+    LAYER = "layer"
+    ANNOTATION_TYPE = "annotation"
 
 
 class LayerProperties(Constant):
@@ -42,7 +44,8 @@ TABLES = {
             end integer NOT NULL,
             document text NOT NULL,
             text text NOT NULL,
-            has_annotation integer
+            has_annotation integer NOT NULL,
+            FOREIGN KEY (document) REFERENCES documents (id)
         );""",
         "idx": []
     },
@@ -59,7 +62,8 @@ TABLES = {
             list integer NOT NULL,
             recommendation integer NOT NULL,
             FOREIGN KEY (sentence) REFERENCES sentences (id),
-            FOREIGN KEY (annotator) REFERENCES annotators (id)
+            FOREIGN KEY (annotator) REFERENCES annotators (id),
+            FOREIGN KEY (type) REFERENCES annotation_types (id)
         );""",
         "idx": ["type", "sentence"]
     },
@@ -74,7 +78,8 @@ TABLES = {
             document text NOT NULL,
             type text NOT NULL,
             FOREIGN KEY (sentence) REFERENCES sentences (id),
-            FOREIGN KEY (annotator) REFERENCES annotators (id)
+            FOREIGN KEY (annotator) REFERENCES annotators (id),
+            FOREIGN KEY (type) REFERENCES annotation_types (id)
         );""",
         "idx": ["type", "sentence"]
     },
@@ -89,6 +94,22 @@ TABLES = {
             FOREIGN KEY (annotator) REFERENCES annotators (id)
         );""",
         "idx": ["entity"]
+    },
+    "annotation_types": {
+        "stm": """(
+            id text PRIMARY KEY,
+            type text NOT NULL,
+            layer text NOT NULL,
+            FOREIGN KEY (layer) REFERENCES layers
+        );""",
+        "idx": ["type", "layer"]
+    },
+    "layers": {
+        "stm": """(
+            id text PRIMARY KEY,
+            layer text NOT NULL
+        );""",
+        "idx": []
     },
     "annotators": {
         "stm": """(
@@ -112,5 +133,7 @@ LAYER_TNAME_DICT = {
     LayerTypes.MEDICATION_ATTRIBUTE: "medication_attributes",
     LayerTypes.RELATION: "relations",
     LayerTypes.ANNOTATOR: "annotators",
-    LayerTypes.DOCUMENT: "documents"
+    LayerTypes.DOCUMENT: "documents",
+    LayerTypes.LAYER: "layers",
+    LayerTypes.ANNOTATION_TYPE: "annotation_types"
 }
