@@ -109,21 +109,21 @@ TABLES = {
             id text PRIMARY KEY,
             layer text NOT NULL
         );""",
-        "idx": []
+        "idx": ["layer"]
     },
     "annotators": {
         "stm": """(
             id text PRIMARY KEY,
             annotator text NOT NULL
         );""",
-        "idx": []
+        "idx": ["annotator"]
     },
     "documents": {
         "stm": """(
             id text PRIMARY KEY,
             document text NOT NULL
         );""",
-        "idx": []
+        "idx": ["document"]
     }
 }
 
