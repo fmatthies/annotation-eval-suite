@@ -30,15 +30,23 @@ def return_html(sentence, entities, focus_entity, focus_attribute):
         "ents": [{
             "start": e.get("begin"),
             "end": e.get("end"),
-            "label": get_annotation_for_id(e.get("type"))
+            "label": get_annotation_type_for_id(e.get("type"))
         } for e in entities.values()]
     }]
-    colors = get_color_dict()
     focus_entity = focus_entity.upper() if focus_entity else None
     focus_attribute = focus_attribute.upper() if focus_attribute else None
-    if focus_entity is not None or focus_attribute is not None:
-        colors = {vk[0]: vk[1] for vk in colors.items()
-                  if vk[0] == focus_entity or vk[0] == focus_attribute}
+    colors = {}
+    # ToDo: restructure?
+    if focus_entity is not None:
+        colors.update({vk[0]: vk[1] for vk in get_color_dict().items() if vk[0] == focus_entity})
+    else:
+        colors.update({vk[0]: vk[1] for vk in get_color_dict().items() if vk[0].lower() in
+                       get_annotation_types_for_layer_id(get_id_for_layer(const.LayerTypes.MEDICATION_ENTITY))})
+    if focus_attribute is not None:
+        colors.update({vk[0]: vk[1] for vk in get_color_dict().items() if vk[0] == focus_attribute})
+    else:
+        colors.update({vk[0]: vk[1] for vk in get_color_dict().items() if vk[0].lower() in
+                       get_annotation_types_for_layer_id(get_id_for_layer(const.LayerTypes.MEDICATION_ATTRIBUTE))})
     return displacy.render(ex, style="ent", manual=True, minify=True, options={"colors": colors})
 
 
@@ -77,23 +85,45 @@ def get_document_titles() -> list:
 
 
 @st.cache()
-def get_annotation_for_id(annotation_id: str):
+def get_layer_for_id(lid: str):
+    return [a[0] for a in get_db_connection().execute(
+        """
+        SELECT layer
+        FROM layers
+        WHERE id = '{}';
+        """.format(lid)
+    )][0]
+
+
+@st.cache()
+def get_id_for_layer(layer: str):
+    return [a[0] for a in get_db_connection().execute(
+        """
+        SELECT id
+        FROM layers
+        WHERE layer = '{}';
+        """.format(layer.lower())
+    )][0]
+
+
+@st.cache()
+def get_annotation_type_for_id(annotation_id: str):
     return [a[0] for a in get_db_connection().execute(
         """
         SELECT type
         FROM annotation_types
-        WHERE id = {}
+        WHERE id = '{}';
         """.format(annotation_id)
     )][0]
 
 
 @st.cache()
-def get_id_for_annotation(annotation: str):
+def get_id_for_annotation_type(annotation: str):
     return [a[0] for a in get_db_connection().execute(
         """
         SELECT id
         FROM annotation_types
-        WHERE type = {}
+        WHERE type = '{}';
         """.format(annotation)
     )][0]
 
@@ -104,7 +134,7 @@ def get_annotator_for_id(annotator_id: str):
         """
         SELECT annotator
         FROM annotators
-        WHERE id = {}
+        WHERE id = '{}';
         """.format(annotator_id)
     )][0]
 
@@ -126,7 +156,7 @@ def get_document_for_id(document_id: str):
         """
         SELECT document
         FROM documents
-        WHERE id = {}
+        WHERE id = '{}';
         """.format(document_id)
     )][0]
 
@@ -140,6 +170,17 @@ def get_id_for_document(document: str):
         WHERE document = '{}';
         """.format(document)
     )][0]
+
+
+@st.cache()
+def get_annotation_types_for_layer_id(lid: str):
+    return [a[0] for a in get_db_connection().execute(
+        """
+        SELECT type
+        FROM annotation_types
+        WHERE layer = '{}';
+        """.format(lid)
+    )]
 
 
 @st.cache()
@@ -242,13 +283,13 @@ def main():
         sents_with_anno = get_sentences_with_annotations(doc_id)
         focus_entity = \
             st.sidebar.selectbox("Select focus entity",
-                                 options=[get_annotation_for_id(e).title() for e in
+                                 options=[get_annotation_type_for_id(e).title() for e in
                                           get_annotation_ids_for_document(sents_with_anno,
                                                                           const.LayerTypes.MEDICATION_ENTITY)])
         fc_entity_color_only = st.sidebar.checkbox("Color only focus entity", False)
         focus_attribute = \
             st.sidebar.selectbox("Select focus attribute",
-                                 options=[get_annotation_for_id(a).title() for a in
+                                 options=[get_annotation_type_for_id(a).title() for a in
                                           get_annotation_ids_for_document(sents_with_anno,
                                                                           const.LayerTypes.MEDICATION_ATTRIBUTE)])
         fc_attribute_color_only = st.sidebar.checkbox("Color only focus attribute", False)
@@ -260,9 +301,8 @@ def main():
         #     #     threshold, boundary = get_threshold_boundary(_all_annotators)
         st.sidebar.subheader("Sentences")
         # --> Annotator Selection
-        # -----> anno2id_dict = dict(annotator_name: annotator_id)
-        # anno2id_dict, id2anno_dict = get_annotators()
-        sel_annotators = st.sidebar.multiselect("Select annotators", options=get_annotator_names(), default=get_annotator_names())
+        sel_annotators = st.sidebar.multiselect("Select annotators",
+                                                options=get_annotator_names(), default=get_annotator_names())
         # ----- Document Agreement Visualization ----- #
         # ToDo: agreement calculation
         st.header("Document")
