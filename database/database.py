@@ -6,6 +6,12 @@ from sqlite3 import Error
 from typing import Union
 from collections.abc import Iterable
 
+import tqdm
+from cassis import Cas, load_typesystem, load_cas_from_xmi
+
+import uima
+import app_constants.constants as const
+
 logging.basicConfig(level=logging.WARNING)
 
 
@@ -175,3 +181,117 @@ class DataSaver:
                 ),
                 row
             )
+
+
+def get_anno_type_id(anno_types: list, anno_type: str, layer_id: str, ds: DataSaver):
+    store_into_db = False
+    anno_type = anno_type.lower()  # ToDo: to lower or not?
+    if anno_type not in anno_types:
+        anno_types.append(anno_type)
+        store_into_db = True
+    anno_type_id = str(anno_types.index(anno_type))
+    if store_into_db:
+        ds.store_into_table(const.LAYER_TNAME_DICT.get(const.LayerTypes.ANNOTATION_TYPE),
+                            id=anno_type_id, type=anno_type, layer=layer_id)
+    return anno_type_id
+
+
+def get_layer_id(l_types: list, layer: str, ds: DataSaver):
+    store_into_db = False
+    layer = layer.lower()  # ToDo: to lower or not?
+    if layer not in l_types:
+        l_types.append(layer)
+        store_into_db = True
+    layer_id = str(l_types.index(layer))
+    if store_into_db:
+        ds.store_into_table(const.LAYER_TNAME_DICT.get(const.LayerTypes.LAYER),
+                            id=layer_id, layer=layer)
+    return layer_id
+
+
+def store_xmi_in_db(cas: Cas, annotator: str, annotator_id: str, document: str, document_id: str,
+                    anno_types: list, l_types: list, ds: DataSaver):
+    # ToDo: right now ds.store_into_table IGNOREs duplicate sentence ids, but it would be better if I catch the sen-
+    # ToDo: tences in each following cas (after the first one) and don't try to put them into the db in the first place
+    # ToDo: (as well as annotators and documents)
+    ds.store_into_table(const.LAYER_TNAME_DICT.get(const.LayerTypes.ANNOTATOR),
+                        id=annotator_id, annotator=annotator)
+    ds.store_into_table(const.LAYER_TNAME_DICT.get(const.LayerTypes.DOCUMENT),
+                        id=document_id, document=document)
+    for sentence in cas.select(const.LayerTypes.SENTENCE):
+        has_annotation = False
+        sentence_id = "{}-{}".format(document_id, str(sentence.xmiID))
+        layer = const.LayerTypes.MEDICATION_ENTITY
+        for entity in cas.select_covered(const.LayerTypes.MEDICATION_ENTITY, sentence):
+            ent = uima.LAYER_DICT.get(const.LayerTypes.MEDICATION_ENTITY)(entity, cas)
+            anno_type = ent.get_fs_property(const.LayerProperties.MEDICATION_ENTITY_TYPE)
+            entity_id = "{}-{}".format(annotator_id, str(ent.xmi_id))
+            ds.store_into_table(const.LAYER_TNAME_DICT.get(const.LayerTypes.MEDICATION_ENTITY),
+                                id=entity_id, annotator=annotator_id,
+                                begin=(int(ent.begin) - int(sentence.begin)), end=(int(ent.end) - int(sentence.begin)),
+                                text=ent.covered_text, sentence=sentence_id, document=document_id,
+                                type=get_anno_type_id(anno_types, anno_type, get_layer_id(l_types, layer, ds), ds),
+                                list=1 if ent.get_fs_property(const.LayerProperties.MEDICATION_ENTITY_IS_LIST) else 0,
+                                recommendation=1 if ent.get_fs_property(const.LayerProperties.MEDICATION_ENTITY_IS_RECOMMENDATION) else 0)
+            has_annotation = True
+        layer = const.LayerTypes.MEDICATION_ATTRIBUTE
+        for attribute in cas.select_covered(const.LayerTypes.MEDICATION_ATTRIBUTE, sentence):
+            attr = uima.LAYER_DICT.get(const.LayerTypes.MEDICATION_ATTRIBUTE)(attribute, cas)
+            anno_type = attr.get_fs_property(const.LayerProperties.MEDICATION_ATTRIBUTE_TYPE)
+            attribute_id = "{}-{}".format(annotator_id, str(attr.xmi_id))
+            ds.store_into_table(const.LAYER_TNAME_DICT.get(const.LayerTypes.MEDICATION_ATTRIBUTE),
+                                id=attribute_id, annotator=annotator_id,
+                                begin=(int(attr.begin) - int(sentence.begin)), end=(int(attr.end) - int(sentence.begin)),
+                                text=attr.covered_text, sentence=sentence_id, document=document_id,
+                                type=get_anno_type_id(anno_types, anno_type, get_layer_id(l_types, layer, ds), ds))
+            has_annotation = True
+            for rel_ent in attr.get_fs_property(const.LayerProperties.MEDICATION_ATTRIBUTE_RELATION):
+                rel_id = rel_ent[0]
+                rel_target = rel_ent[1]
+                relation_id = "{}-{}".format(annotator_id, str(rel_id))
+                ds.store_into_table(const.LAYER_TNAME_DICT.get(const.LayerTypes.RELATION),
+                                    id=relation_id, annotator=annotator_id,
+                                    entity="{}-{}".format(annotator_id, str(rel_target.xmi_id)),
+                                    attribute=attribute_id)
+        ds.store_into_table(const.LAYER_TNAME_DICT.get(const.LayerTypes.SENTENCE),
+                            id=sentence_id, document=document_id, begin=sentence.begin, end=sentence.end,
+                            text=sentence.get_covered_text(), has_annotation=1 if has_annotation else 0)
+    return True
+
+
+if __name__ == '__main__':
+    project_file = os.path.abspath("../test/test-resources/test_project.zip" if len(sys.argv) <= 1 else sys.argv[1])
+    in_memory = False if len(sys.argv) <= 2 else sys.argv[2].lower() in ["true", "t", "yes", "y"]
+    db_file = os.path.abspath("../test/test-resources/test_project.db" if len(sys.argv) <= 3 else sys.argv[3])
+    reset_db = not (False if len(sys.argv) <= 4 else sys.argv[4].lower() in ["false", "f", "no", "n"])
+
+    print("""
+    Starting with these options:
+    zip file:       {}
+    db file:        {}
+    db in memory:   {}
+    reset db:       {}
+    """.format(project_file, db_file, in_memory, reset_db))
+
+    xmi_dict = uima.get_project_files(project_file, const.WebAnnoExport.TYPE_SYSTEM)
+    typesystem = load_typesystem(xmi_dict.get(const.WebAnnoExport.TYPE_SYSTEM))
+
+    db_util = DBUtils(in_memory=in_memory, db_file=db_file)
+    db_util.create_connection()
+    data_saver = DataSaver(db_util, const.TABLES, reset_db=reset_db)
+
+    pbar = tqdm.tqdm(total=(len(xmi_dict.get("documents"))*len(xmi_dict.get("annotators"))))
+
+    annotation_types = list()
+    layer_types = list()
+    for doc, d_id in xmi_dict.get("documents").items():
+        for anno, a_id in xmi_dict.get("annotators").items():
+            updated = False
+            xmi = xmi_dict.get(doc).get(anno, None)
+            if xmi:
+                anno_cas = load_cas_from_xmi(xmi, typesystem=typesystem)
+                updated = store_xmi_in_db(anno_cas, anno, a_id, doc, d_id,
+                                          annotation_types, layer_types, data_saver)
+            if updated:
+                pbar.update(1)
+    db_util.close_connection()

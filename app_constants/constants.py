@@ -20,8 +20,10 @@ class LayerProperties(Constant):
     MEDICATION_ATTRIBUTE_RELATION = "relationType"
 
 
-class FileNames(Constant):
+class WebAnnoExport(Constant):
     TYPE_SYSTEM = "TypeSystem.xml"
+    ZIP_ENDING = ".zip"
+    ROOT = "annotation/"
 
 
 class Keys(Constant):

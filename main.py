@@ -36,7 +36,6 @@ def return_html(sentence, entities, focus_entity, focus_attribute):
     focus_entity = focus_entity.upper() if focus_entity else None
     focus_attribute = focus_attribute.upper() if focus_attribute else None
     colors = {}
-    # ToDo: restructure?
     if focus_entity is not None:
         colors.update({vk[0]: vk[1] for vk in get_color_dict().items() if vk[0] == focus_entity})
     else:
@@ -256,21 +255,36 @@ def get_sentences_with_annotations(doc_id: str) -> List[str]:
 @st.cache(allow_output_mutation=True)
 def get_db_connection() -> sqlite3.Connection:
     print("connect ...")
-    return sqlite3.connect("./tmp.db", check_same_thread=False)
+    return sqlite3.connect("./data_base_tmp/tmp.db", check_same_thread=False)
 
 
 @st.cache()
 def create_temporary_db(db_file_io) -> None:
     print("Create temporary db file ...")
-    with open("./tmp.db", 'wb') as tmp:
+    with open("./data_base_tmp/tmp.db", 'wb') as tmp:
         tmp.write(db_file_io.read())
 
 
 def main():
-    # ----- Sidebar ----- #
-    fis = st.sidebar.file_uploader("Upload db file")
+    st.title("Annotation Visualizer")
+    choice_desc = st.empty()
+    choice_desc.info(
+        """
+        ### db file  
+        Choose this if you have already created a database file from a WebAnno project  
+        ### zip file
+        Choose this if you just have an export of a WebAnno project
+        """)
+    upload_opt = st.empty()
+    upload = upload_opt.radio("Upload db file or project zip?", ("db file", "zip file"))
+    file_up = st.empty()
+    fis = file_up.file_uploader("Upload db file" if upload == "db file" else "Upload zip file")
     if fis is not None:
+        upload_opt.empty()
+        file_up.empty()
+        choice_desc.empty()
         create_temporary_db(fis)
+        # ----- Sidebar ----- #
         st.sidebar.subheader("General")
         # --> Document Selection
         doc_name = st.sidebar.selectbox("Select document", get_document_titles())
