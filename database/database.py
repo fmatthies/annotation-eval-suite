@@ -3,7 +3,7 @@ import sys
 import logging
 import sqlite3
 from sqlite3 import Error
-from typing import Union
+from typing import Union, Tuple, List
 from collections.abc import Iterable
 
 import tqdm
@@ -151,24 +151,27 @@ class DataSaver:
         """
         self.db_connection.commit()
 
-    def store_into_table(self, table_name: str, columns: Union[list, set] = None, **kwargs) -> None:
+    def store_into_table(self, table_name: str, columns: Union[list, set] = None, ignore_duplicates: bool = False,
+                         **kwargs) -> None:
         """
         Either put a single row into the table `table_name` where you specify the column and values as
         keyword argument pairs: `store_into_table(table_name, col1=val1, col2=val2, ...)`.
         Or you can store multiple rows, specifying the param `columns` and providing an `Iterable`:
         `store_into_table(table_name, columns=(col1, col2), iter_arg=[(val1-1, val2-1), (val1-2, val2-2)])`
 
+        :param ignore_duplicates:
         :param table_name: name of the reference table
         :param columns:
         :param kwargs:
         :return:
         """
+        insert_stm = " OR IGNORE" if ignore_duplicates else ""
         if len(kwargs) == 1 and isinstance(list(kwargs.values())[0], Iterable):
             iterable = list(kwargs.values())[0]
             logging.info("Populating table '{0}' with values from iterable".format(table_name))
             self.db_cursor.executemany(
-                "INSERT OR IGNORE INTO {0}({1}) VALUES ({2})".format(
-                    table_name, ",".join(columns), ",".join(["?"]*len(columns))),
+                "INSERT{3} INTO {0}({1}) VALUES ({2})".format(
+                    table_name, ",".join(columns), ",".join(["?"]*len(columns)), insert_stm),
                 iterable
             )
         else:
@@ -176,11 +179,24 @@ class DataSaver:
             # ToDo: better log
             logging.info("Populating columns '{0}' of table '{1}'".format(", ".join(cols), table_name))
             self.db_cursor.execute(
-                "INSERT OR IGNORE INTO {0} ({1}) VALUES ({2})".format(
-                    table_name, ",".join(cols), ",".join(["?"]*len(cols))
-                ),
+                "INSERT{3} INTO {0} ({1}) VALUES ({2})".format(
+                    table_name, ",".join(cols), ",".join(["?"]*len(cols)), insert_stm),
                 row
             )
+
+    def update_row_of_table(self, table_name: str, where_cols: List[Tuple[str, str]], **kwargs):
+        cols, row = list(kwargs.keys()), [str(v) if isinstance(v, int) else v for v in kwargs.values()]
+        self.db_cursor.execute(
+            """
+            UPDATE {0}
+            SET {1}
+            WHERE {2}
+            """.format(
+                table_name, ",\n".join(["{} = ?".format(cols[i]) for i in range(len(cols))]),
+                "".join(["{} = '{}'".format(t[0], t[1]) for t in where_cols])
+            ),
+            row
+        )
 
 
 def get_anno_type_id(anno_types: list, anno_type: str, layer_id: str, ds: DataSaver):
@@ -210,13 +226,14 @@ def get_layer_id(l_types: list, layer: str, ds: DataSaver):
 
 
 def store_xmi_in_db(cas: Cas, annotator: str, annotator_id: str, document: str, document_id: str,
-                    anno_types: list, l_types: list, ds: DataSaver):
+                    anno_types: list, l_types: list, s_list: set, ds: DataSaver):
     # ToDo: right now ds.store_into_table IGNOREs duplicate sentence ids, but it would be better if I catch the sen-
     # ToDo: tences in each following cas (after the first one) and don't try to put them into the db in the first place
     # ToDo: (as well as annotators and documents)
-    ds.store_into_table(const.LAYER_TNAME_DICT.get(const.LayerTypes.ANNOTATOR),
+    # ToDo: --> only true for annotators and documents; do I need to change this?
+    ds.store_into_table(const.LAYER_TNAME_DICT.get(const.LayerTypes.ANNOTATOR), ignore_duplicates=True,
                         id=annotator_id, annotator=annotator)
-    ds.store_into_table(const.LAYER_TNAME_DICT.get(const.LayerTypes.DOCUMENT),
+    ds.store_into_table(const.LAYER_TNAME_DICT.get(const.LayerTypes.DOCUMENT), ignore_duplicates=True,
                         id=document_id, document=document)
     for sentence in cas.select(const.LayerTypes.SENTENCE):
         has_annotation = False
@@ -253,9 +270,17 @@ def store_xmi_in_db(cas: Cas, annotator: str, annotator_id: str, document: str, 
                                     id=relation_id, annotator=annotator_id,
                                     entity="{}-{}".format(annotator_id, str(rel_target.xmi_id)),
                                     attribute=attribute_id)
-        ds.store_into_table(const.LAYER_TNAME_DICT.get(const.LayerTypes.SENTENCE),
-                            id=sentence_id, document=document_id, begin=sentence.begin, end=sentence.end,
-                            text=sentence.get_covered_text(), has_annotation=1 if has_annotation else 0)
+
+        if sentence_id not in s_list:
+            s_list.add(sentence_id)
+            ds.store_into_table(const.LAYER_TNAME_DICT.get(const.LayerTypes.SENTENCE),
+                                id=sentence_id, document=document_id, begin=sentence.begin, end=sentence.end,
+                                text=sentence.get_covered_text(), has_annotation=1 if has_annotation else 0)
+        elif sentence_id in s_list and has_annotation:
+            ds.update_row_of_table(const.LAYER_TNAME_DICT.get(const.LayerTypes.SENTENCE),
+                                   [("id", sentence_id)],
+                                   has_annotation=1
+                                   )
     return True
 
 
@@ -284,6 +309,7 @@ if __name__ == '__main__':
 
     annotation_types = list()
     layer_types = list()
+    sentence_list = set()
     for doc, d_id in xmi_dict.get("documents").items():
         for anno, a_id in xmi_dict.get("annotators").items():
             updated = False
@@ -291,7 +317,7 @@ if __name__ == '__main__':
             if xmi:
                 anno_cas = load_cas_from_xmi(xmi, typesystem=typesystem)
                 updated = store_xmi_in_db(anno_cas, anno, a_id, doc, d_id,
-                                          annotation_types, layer_types, data_saver)
+                                          annotation_types, layer_types, sentence_list, data_saver)
             if updated:
                 pbar.update(1)
     db_util.close_connection()

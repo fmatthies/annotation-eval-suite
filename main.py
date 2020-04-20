@@ -18,8 +18,13 @@ import app_constants.constants as const
 def display_sentence_comparison(sel_annotators: list, sent_id: str, doc_id: str,
                                 e_focus: Union[None, str], a_focus: Union[None, str]):
     annotation_dict = annotations_for_sentence([id_for_annotator(a) for a in sel_annotators], sent_id)
-    for annotator_id, entities_dict in annotation_dict.items():
-        st.subheader(annotator_for_id(annotator_id))
+    for annotator_name in sel_annotators:
+        annotator_id = id_for_annotator(annotator_name)
+        if annotator_id not in annotation_dict.keys():
+            entities_dict = {}
+        else:
+            entities_dict = annotation_dict.get(annotator_id)
+        st.subheader(annotator_name)
         st.write(
             return_html(sentence=sentences_for_document(doc_id).get(sent_id),
                         entities=entities_dict, focus_entity=e_focus, focus_attribute=a_focus),
@@ -266,6 +271,7 @@ def sentences_for_document(doc_id: str) -> OrderedDict[str, str]:
 
 @st.cache()
 def annotations_for_sentence(anno_ids: List[str], sent_id: str):
+    # ToDo: stupid slow down because this gets executed for every combination of annotators...
     """
     Returns a dictionary of annotator `ids` as keys with a dictionary as value that has itself a
     SpaCy compliant entity visualization dictionary as value and the entity `id` as key
@@ -395,6 +401,8 @@ def main():
         # -----> sents_dict = OrderedDict(sentence_id: sentence_text)
         # -----> sents_with_anno = List(sentence_id)
         sents_with_anno = sentences_with_annotations(doc_id)
+        # -----> Caching of "annotations for sentence":
+        _ = [annotations_for_sentence([id_for_annotator(a) for a in annotator_names()], sid) for sid in sents_with_anno]
         # ---> Set of annotation categories
         annotation_types = set(functools.reduce(
             lambda x, y: x + y, [_id_type.get("types")
@@ -451,8 +459,9 @@ def main():
             # st.write(doc_annotations_for_type(id_for_annotation_type(focus_entity), doc_id))
             # st.subheader("Annotation IDs for attribute '{}':".format(focus_attribute))
             # st.write(doc_annotations_for_type(id_for_annotation_type(focus_attribute), doc_id))
-            st.write(separate_by_annotators(doc_annotations_for_type(id_for_annotation_type(focus_entity), doc_id),
-                     [id_for_annotator(a) for a in sel_annotators]))
+
+            # st.write(separate_by_annotators(doc_annotations_for_type(id_for_annotation_type(focus_entity), doc_id),
+            #          [id_for_annotator(a) for a in sel_annotators]))
 
 
 main()
