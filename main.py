@@ -17,7 +17,7 @@ import app_constants.constants as const
 
 def display_sentence_comparison(sel_annotators: list, sent_id: str, doc_id: str,
                                 e_focus: Union[None, str], a_focus: Union[None, str]):
-    annotation_dict = annotations_for_sentence([id_for_annotator(a) for a in sel_annotators], sent_id)
+    annotation_dict = annotations_for_sentence_for_anno_list([id_for_annotator(a) for a in sel_annotators], sent_id)
     for annotator_name in sel_annotators:
         annotator_id = id_for_annotator(annotator_name)
         if annotator_id not in annotation_dict.keys():
@@ -30,6 +30,8 @@ def display_sentence_comparison(sel_annotators: list, sent_id: str, doc_id: str,
                         entities=entities_dict, focus_entity=e_focus, focus_attribute=a_focus),
             unsafe_allow_html=True
         )
+
+
 # def display_sentence_comparison(annotators: list, sent_id: str, doc_id: str,
 #                                 e_focus: Union[None, str], a_focus: Union[None, str]):
 #     annotator_ids: list = [id_for_annotator(a) for a in annotators]
@@ -269,37 +271,44 @@ def sentences_for_document(doc_id: str) -> OrderedDict[str, str]:
     ))
 
 
+def annotations_for_sentence_for_anno_list(anno_ids: List[str], sent_id: str):
+    annotations = {}
+    for anno_id in set(anno_ids):
+        annotations[anno_id] = annotations_for_sentence(anno_id, sent_id)
+    return annotations
+
+
 @st.cache()
-def annotations_for_sentence(anno_ids: List[str], sent_id: str):
+def annotations_for_sentence(anno_id: str, sent_id: str):
     # ToDo: stupid slow down because this gets executed for every combination of annotators...
     """
     Returns a dictionary of annotator `ids` as keys with a dictionary as value that has itself a
     SpaCy compliant entity visualization dictionary as value and the entity `id` as key
 
-    :param anno_ids: a list of the chosen annotator ids
+    :param anno_id: the id of the chosen annotator
     :param sent_id: the id of the chosen sentence
     :return:
     """
-    where_and_clause = " AND annotator in {}".format(tuple(anno_ids))
-    if len(anno_ids) == 1:
-        where_and_clause = " AND annotator = '{}'".format(anno_ids[0])
-    if len(anno_ids) == 0:
-        return {}
-    annotations = collections.defaultdict(dict)
+    # where_and_clause = " AND annotator in {}".format(tuple(anno_id))
+    # if len(anno_id) == 1:
+    #     where_and_clause = " AND annotator = '{}'".format(anno_id[0])
+    # if len(anno_id) == 0:
+    #     return {}
+    annotations = {}
     for result in db_connection().execute(
             """
-        SELECT id, annotator, begin, end, type
+        SELECT id, begin, end, type
         FROM {0}
-        WHERE sentence = '{2}'{3}
+        WHERE sentence = '{2}' AND annotator = '{3}'
         UNION ALL
-        SELECT id, annotator, begin, end, type
+        SELECT id, begin, end, type
         FROM {1}
-        WHERE sentence = '{2}'{3}
+        WHERE sentence = '{2}' AND annotator = '{3}'
         ORDER BY begin;
         """.format(const.LAYER_TNAME_DICT.get(const.LayerTypes.MEDICATION_ENTITY),
                    const.LAYER_TNAME_DICT.get(const.LayerTypes.MEDICATION_ATTRIBUTE),
-                   sent_id, where_and_clause)):
-        annotations[result[1]][result[0]] = {"begin": result[2], "end": result[3], "type": result[4]}
+                   sent_id, anno_id)):
+        annotations[result[0]] = {"begin": result[1], "end": result[2], "type": result[3]}
     return annotations
 
 
@@ -355,8 +364,23 @@ def doc_annotations_for_type(tid: str, doc_id: str, combined_drugs: bool = True)
     return ids
 
 
-def separate_by_annotators(annotation_ids: list, annotator_ids: list):
+def separate_annotations_by_annotators(annotation_ids: list, annotator_ids: list):
     return {anno_id: [anno for anno in annotation_ids if anno.split("-")[0] == anno_id] for anno_id in annotator_ids}
+
+
+@st.cache()
+def centroids_for_document(doc_id: str, focus_annotation: str, annotator_list: list, combined_drugs: bool = True):
+    """
+    :param doc_id:
+    :param focus_annotation:
+    :param annotator_list:
+    :param combined_drugs:
+    :return:
+    """
+    return separate_annotations_by_annotators(
+        doc_annotations_for_type(id_for_annotation_type(focus_annotation), doc_id, combined_drugs),
+        [id_for_annotator(a) for a in annotator_list]
+    )
 
 
 @st.cache(allow_output_mutation=True)
@@ -402,11 +426,12 @@ def main():
         # -----> sents_with_anno = List(sentence_id)
         sents_with_anno = sentences_with_annotations(doc_id)
         # -----> Caching of "annotations for sentence":
-        _ = [annotations_for_sentence([id_for_annotator(a) for a in annotator_names()], sid) for sid in sents_with_anno]
+        _ = [annotations_for_sentence_for_anno_list([id_for_annotator(a) for a in annotator_names()], sid)
+             for sid in sents_with_anno]
         # ---> Set of annotation categories
         annotation_types = set(functools.reduce(
             lambda x, y: x + y, [_id_type.get("types")
-                                 for _id_type in all_annotations_for_document(doc_id).values()]
+                                 for _id_type in all_annotations_for_document(doc_id).values()], []
         ))
         focus_entity = \
             st.sidebar.selectbox("Select focus entity",
@@ -460,8 +485,7 @@ def main():
             # st.subheader("Annotation IDs for attribute '{}':".format(focus_attribute))
             # st.write(doc_annotations_for_type(id_for_annotation_type(focus_attribute), doc_id))
 
-            # st.write(separate_by_annotators(doc_annotations_for_type(id_for_annotation_type(focus_entity), doc_id),
-            #          [id_for_annotator(a) for a in sel_annotators]))
+            st.write(centroids_for_document(doc_id, focus_attribute, sel_annotators))
 
 
 main()

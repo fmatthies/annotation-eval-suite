@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import re
+import sqlite3
 
 from typing import Dict, List, Tuple, Union
 from numpy import zeros
@@ -158,7 +159,7 @@ class CentroidObject(object):
 class Centroids(object):
     # TODO: thresholding
 
-    def __init__(self, ):
+    def __init__(self, text: str, annotators: list):
         """
         Short description and reference to Centroids algorithm
 
@@ -167,6 +168,8 @@ class Centroids(object):
         self._white_space_mask = None
         self._text_wo_whitespace = None
         self._centroid_objects_dict = defaultdict(list)
+        self._text = text
+        self._annotators = sorted(annotators)
 
     def _create_trigger_matrix(self, _trigger: str) -> None:
         """
@@ -178,11 +181,9 @@ class Centroids(object):
         """
         if _trigger in self._centroid_matrices.keys():
             return
-        _text = self._comp_obj.get_text()
-        _sets = self._comp_obj.get_sets()
-        _matrix = zeros(shape=(len(_sets), len(_text)))
-        for i in range(len(_sets)):
-            _doc_obj = self._comp_obj.get_set_document(_sets[i])
+        _matrix = zeros(shape=(len(self._annotators), len(self._text)))
+        for i in range(len(self._annotators)):
+            _doc_obj = self._comp_obj.get_set_document(self._sets[i])
             _trigger_dict = _doc_obj.get_triggers(_trigger)
             self._add_spans_to_array(_trigger_dict, _matrix, i)
         self._centroid_matrices[_trigger] = _matrix
