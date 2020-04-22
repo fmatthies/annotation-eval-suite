@@ -90,7 +90,8 @@ class InstanceAgreement:
                 fn_all += self.all_instance_dict[key]["fn"]
         return fn_all
 
-    def agreement_fscore(self, instance_type: Union[str, list], annotators: list, table: str, rounded: int = 3):
+    def agreement_fscore(self, instance_type: Union[str, list], annotators: list, table: str,
+                         rounded: Union[int, None] = None):
         tp = self.true_positives(instance_type, annotators, table)
         fn = self.false_negatives(instance_type, annotators, table)
         fp = self.false_positives(instance_type, annotators, table)
@@ -98,7 +99,8 @@ class InstanceAgreement:
         denominator = (2*tp) + fn + fp
         if len(annotators) == 0 or denominator == 0:
             return 0.0
-        return round(2*tp/denominator/len(annotators), rounded)
+        res = 2*tp/denominator/len(annotators)
+        return round(res, rounded) if rounded is not None else res
 
 
 if __name__ == "__main__":

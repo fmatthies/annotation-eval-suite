@@ -28,26 +28,10 @@ def display_sentence_comparison(sel_annotators: list, sent_id: str, doc_id: str,
             entities_dict = annotation_dict.get(annotator_id)
         st.subheader(annotator_name)
         st.write(
-            return_html(sentence=sentences_for_document(doc_id).get(sent_id),
-                        entities=entities_dict, focus_entity=e_focus, focus_attribute=a_focus),
+            return_entity_html(sentence=sentences_for_document(doc_id).get(sent_id),
+                               entities=entities_dict, focus_entity=e_focus, focus_attribute=a_focus),
             unsafe_allow_html=True
         )
-
-
-# def display_sentence_comparison(annotators: list, sent_id: str, doc_id: str,
-#                                 e_focus: Union[None, str], a_focus: Union[None, str]):
-#     annotator_ids: list = [id_for_annotator(a) for a in annotators]
-#     annotation_ids: list = all_annotations_for_document(doc_id).get(sent_id).get("ids")
-#     type_ids: list = all_annotations_for_document(doc_id).get(sent_id).get("types")
-#     sentence_str: str = sentences_for_document(doc_id).get(sent_id)
-#     for anno_id in annotator_ids:
-#         mask = [True if (_id.split("-")[0] == anno_id) else False for _id in annotation_ids]
-#         entities = annotation_information_for_ids(list(itertools.compress(annotation_ids, mask)),
-#                                                   list(itertools.compress(type_ids, mask)))
-#         st.write(
-#             return_html(sentence=sentence_str, entities=entities, focus_entity=e_focus, focus_attribute=a_focus),
-#             unsafe_allow_html=True
-#         )
 
 
 def is_drug_categorie(tid):
@@ -66,7 +50,7 @@ def drug_type_ids():
 
 
 @st.cache()
-def return_html(sentence, entities, focus_entity, focus_attribute):
+def return_entity_html(sentence, entities, focus_entity, focus_attribute):
     ex = [{
         "text": sentence,
         "ents": [{
@@ -91,35 +75,21 @@ def return_html(sentence, entities, focus_entity, focus_attribute):
     return displacy.render(ex, style="ent", manual=True, minify=True, options={"colors": colors})
 
 
-# @st.cache()
-# def annotation_information_for_ids(aid: Union[str, list], atype: Union[str, list]):
-#     """
-#
-#     :param aid: list or string of an annotation id(s)
-#     :param atype: list or string of the accompanying type id(s)
-#     :return:
-#     """
-#     table = collections.defaultdict(list)
-#     info = []
-#     if isinstance(aid, str) and isinstance(atype, str):
-#         aid = [aid]
-#         atype = [atype]
-#     for i in range(len(atype)):
-#         if is_drug_categorie(atype[i]):
-#             table["medication_entities"].append(aid[i])
-#         else:
-#             table["medication_attributes"].append(aid[i])
-#
-#     for t, v in table.items():
-#         info.extend([{"id": i[0], "begin": i[1], "end": i[2], "type": i[3]} for i in db_connection().execute(
-#             """
-#             SELECT id, begin, end, type
-#             FROM {0}
-#             WHERE id in ({1})
-#             ORDER BY begin;
-#             """.format(t, ",".join("'{0}'".format(_id) for _id in v))
-#         )])
-#     return info
+@st.cache()
+def return_relation_html():
+    rel = {
+        "words": [
+            {"text": "This", "tag": "Medikament"},
+            {"text": "is", "tag": ""},
+            {"text": "a", "tag": ""},
+            {"text": "sentence", "tag": "Grund"}
+        ],
+        "arcs": [
+            {"start": 3, "end": 0, "label": "", "dir": "right"}
+        ]
+    }
+    return displacy.render(rel, style="dep", manual=True, minify=True,
+                           options={"compact": True, "distance": 75})
 
 
 @st.cache()
@@ -152,6 +122,16 @@ def document_titles() -> list:
         SELECT DISTINCT document
         FROM documents
         ORDER BY document;
+        """
+    )]
+
+
+@st.cache()
+def annotation_types() -> list:
+    return [a_type[0] for a_type in db_connection().execute(
+        """
+        SELECT id
+        FROM annotation_types
         """
     )]
 
@@ -392,7 +372,8 @@ def instance_agreement_obj_for_document(doc_id: str):
 
 
 @st.cache()
-def instance_agreement(doc_id: str, instance: str, annotators: list, combined_drugs: bool = True):
+def instance_agreement(doc_id: str, instance: str, annotators: list,
+                       combined_entities: bool = True, combined_attributes: bool = False):
     if instance is None:
         return 0
     instance_id = id_for_annotation_type(instance)
@@ -400,8 +381,10 @@ def instance_agreement(doc_id: str, instance: str, annotators: list, combined_dr
     ia = instance_agreement_obj_for_document(doc_id)
     table = const.LAYER_TNAME_DICT[const.LayerTypes.MEDICATION_ENTITY] if is_drug_categorie(instance_id) \
         else const.LAYER_TNAME_DICT[const.LayerTypes.MEDICATION_ATTRIBUTE]
-    if combined_drugs and is_drug_categorie(instance_id):
+    if combined_entities and is_drug_categorie(instance_id):
         instance_id = drug_type_ids()
+    if combined_attributes and not is_drug_categorie(instance_id):
+        instance_id = set(annotation_types()).difference(drug_type_ids())
     return ia.agreement_fscore(instance_type=instance_id, annotators=annotators, table=table)
 
 
@@ -467,10 +450,11 @@ def main():
                                           if not annotation_type_for_id(e).lower().startswith("medikament")])
         fc_attribute_color_only = st.sidebar.checkbox("Color only focus attribute", False)
         # --> Agreement Properties
-        st.sidebar.subheader("Agreement Properties")
-        combined_drugs = st.sidebar.checkbox("Treat all drug annotations as one type", True)
-        use_only_selected_annotators = st.sidebar.checkbox(
-            "Use only selected annotators under 'Sentences' for agreement calculation", True)
+        st.sidebar.subheader("Agreement Settings")
+        combined_entities = st.sidebar.checkbox("All entities are one type", True)
+        combined_attributes = st.sidebar.checkbox("All attributes are one type", False)
+        use_only_selected_annotators = st.sidebar.checkbox("Use only selected annotators", True)
+        agr_rounded_to = st.sidebar.slider("Round to", 1, 4, 2)
         #     # match_type = select_match_type()
         #     # threshold, boundary = 0, 0
         #     # if match_type == "one_all":
@@ -488,16 +472,21 @@ def main():
         else:
             st.info("Select 'Show complete document' in the sidebar")
         # # ----- Visualize Agreement Scores ----- #
-        st.header("Agreement")
+        vis_anno = "all" if not use_only_selected_annotators else ", ".join(sel_annotators)
+        st.header("Agreement ({})".format(vis_anno))
         agreement_annotators = sel_annotators if use_only_selected_annotators else annotator_names()
         if len(agreement_annotators) <= 1:
             st.info("For agreement calculation more than one annotator must be selected")
         else:
-            entity_index = "Medikamente" if combined_drugs else " ".join(focus_entity.split()[1:])
-            ia_drug = instance_agreement(doc_id, focus_entity, agreement_annotators, combined_drugs)
-            ia_attr = instance_agreement(doc_id, focus_attribute, agreement_annotators)
-            st.write(pd.DataFrame(data={"instance": [ia_drug, ia_attr], "token": ["None", "None"]},
-                                  index=[entity_index, focus_attribute]))
+            entity_index = "(Medikamente)" if combined_entities else " ".join(focus_entity.split()[1:])
+            attribute_index = "(Attribute)" if combined_attributes else focus_attribute
+            ia_drug = instance_agreement(doc_id, focus_entity, agreement_annotators,
+                                         combined_entities=combined_entities)
+            ia_attr = instance_agreement(doc_id, focus_attribute, agreement_annotators,
+                                         combined_attributes=combined_attributes)
+            agr_df = pd.DataFrame(data={"instance": [ia_drug, ia_attr], "token": [0, 0]},
+                                  index=[entity_index, attribute_index])
+            st.dataframe(agr_df.style.format("{:." + str(agr_rounded_to) + "f}"))
         # # ----- Visualize Sentence Comparison ----- #
         sent_id = sents_with_anno[0] if len(sents_with_anno) >= 1 else None
         # --> Sentence Selection
@@ -517,6 +506,8 @@ def main():
             if fc_attribute_color_only:
                 a_focus = focus_attribute
             display_sentence_comparison(sel_annotators, sent_id, doc_id, e_focus, a_focus)
+
+        st.write(return_relation_html(), unsafe_allow_html=True)
 
 
 main()
