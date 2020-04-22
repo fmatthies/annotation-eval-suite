@@ -104,14 +104,14 @@ class InstanceAgreement:
 if __name__ == "__main__":
     db_conn = sqlite3.connect("../test/test-resources/test_project.db", check_same_thread=False)
 
-    # type_group = ["2", "0", "3", "5"]
-    # table = "medication_entities"
-    type_group = ["1", "4"]
-    table = "medication_attributes"
+    type_group = ["2", "0", "3", "5"]
+    table_type = "medication_entities"
+    # type_group = ["1", "4"]
+    # table_type = "medication_attributes"
 
     ia = InstanceAgreement(annotators=["0", "1", "2"], doc_id="2", db_connection=db_conn)
 
-    print(ia.agreement_fscore(type_group, ["0", "1"], table))
-    print(ia.agreement_fscore(type_group, ["0", "2"], table))
-    print(ia.agreement_fscore(type_group, ["0", "2", "1"], table))
-    print(ia.agreement_fscore(type_group, ["2", "1"], table))
+    print(ia.agreement_fscore(type_group, ["0", "1"], table_type))
+    print(ia.agreement_fscore(type_group, ["0", "2"], table_type))
+    print(ia.agreement_fscore(type_group, ["0", "2", "1"], table_type))
+    print(ia.agreement_fscore(type_group, ["2", "1"], table_type))

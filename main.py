@@ -5,11 +5,13 @@ import itertools
 import collections
 import sqlite3
 import streamlit as st
+import pandas as pd
 from spacy import displacy
 from seaborn import color_palette
 from typing import List, Dict, Tuple, OrderedDict, Union
 
 import app_constants.constants as const
+from agreement import InstanceAgreement
 
 
 # ToDo: replace table names with constants?
@@ -49,7 +51,18 @@ def display_sentence_comparison(sel_annotators: list, sent_id: str, doc_id: str,
 
 
 def is_drug_categorie(tid):
-    return annotation_type_for_id(tid).lower().startswith("medikament")
+    return tid in drug_type_ids()
+
+
+@st.cache()
+def drug_type_ids():
+    return [d[0] for d in db_connection().execute(
+        """
+        SELECT id
+        FROM annotation_types
+        WHERE type LIKE 'medikament%'
+        """
+    )]
 
 
 @st.cache()
@@ -368,19 +381,28 @@ def separate_annotations_by_annotators(annotation_ids: list, annotator_ids: list
     return {anno_id: [anno for anno in annotation_ids if anno.split("-")[0] == anno_id] for anno_id in annotator_ids}
 
 
-@st.cache()
-def centroids_for_document(doc_id: str, focus_annotation: str, annotator_list: list, combined_drugs: bool = True):
+@st.cache(allow_output_mutation=True)
+def instance_agreement_obj_for_document(doc_id: str):
     """
     :param doc_id:
-    :param focus_annotation:
-    :param annotator_list:
-    :param combined_drugs:
     :return:
     """
-    return separate_annotations_by_annotators(
-        doc_annotations_for_type(id_for_annotation_type(focus_annotation), doc_id, combined_drugs),
-        [id_for_annotator(a) for a in annotator_list]
-    )
+    return InstanceAgreement(annotators=[id_for_annotator(a) for a in annotator_names()],
+                             doc_id=doc_id, db_connection=db_connection())
+
+
+@st.cache()
+def instance_agreement(doc_id: str, instance: str, annotators: list, combined_drugs: bool = True):
+    if instance is None:
+        return 0
+    instance_id = id_for_annotation_type(instance)
+    annotators = [id_for_annotator(a) for a in annotators]
+    ia = instance_agreement_obj_for_document(doc_id)
+    table = const.LAYER_TNAME_DICT[const.LayerTypes.MEDICATION_ENTITY] if is_drug_categorie(instance_id) \
+        else const.LAYER_TNAME_DICT[const.LayerTypes.MEDICATION_ATTRIBUTE]
+    if combined_drugs and is_drug_categorie(instance_id):
+        instance_id = drug_type_ids()
+    return ia.agreement_fscore(instance_type=instance_id, annotators=annotators, table=table)
 
 
 @st.cache(allow_output_mutation=True)
@@ -415,7 +437,7 @@ def main():
         file_up.empty()
         choice_desc.empty()
         create_temporary_db(fis)
-        # ----- Sidebar ----- #
+        # ----- SIDEBAR ----- #
         st.sidebar.subheader("General")
         # --> Document Selection
         doc_name = st.sidebar.selectbox("Select document", document_titles())
@@ -425,9 +447,10 @@ def main():
         # -----> sents_dict = OrderedDict(sentence_id: sentence_text)
         # -----> sents_with_anno = List(sentence_id)
         sents_with_anno = sentences_with_annotations(doc_id)
-        # -----> Caching of "annotations for sentence":
+        # -----> Caching of "annotations for sentence" and "agreement":
         _ = [annotations_for_sentence_for_anno_list([id_for_annotator(a) for a in annotator_names()], sid)
              for sid in sents_with_anno]
+        _ = instance_agreement_obj_for_document(doc_id)
         # ---> Set of annotation categories
         annotation_types = set(functools.reduce(
             lambda x, y: x + y, [_id_type.get("types")
@@ -444,7 +467,10 @@ def main():
                                           if not annotation_type_for_id(e).lower().startswith("medikament")])
         fc_attribute_color_only = st.sidebar.checkbox("Color only focus attribute", False)
         # --> Agreement Properties
-        #     # st.sidebar.subheader("Agreement Properties")
+        st.sidebar.subheader("Agreement Properties")
+        combined_drugs = st.sidebar.checkbox("Treat all drug annotations as one type", True)
+        use_only_selected_annotators = st.sidebar.checkbox(
+            "Use only selected annotators under 'Sentences' for agreement calculation", True)
         #     # match_type = select_match_type()
         #     # threshold, boundary = 0, 0
         #     # if match_type == "one_all":
@@ -453,13 +479,25 @@ def main():
         # --> Annotator Selection
         sel_annotators = st.sidebar.multiselect("Select annotators",
                                                 options=annotator_names(), default=annotator_names())
-        # ----- Document Agreement Visualization ----- #
+
+        # ----- DOCUMENT AGREEMENT VISUALIZATION ----- #
         # ToDo: agreement calculation
         st.header("Document")
         if show_complete:
             st.write([s for s in sentences_for_document(doc_id).values()])
         else:
             st.info("Select 'Show complete document' in the sidebar")
+        # # ----- Visualize Agreement Scores ----- #
+        st.header("Agreement")
+        agreement_annotators = sel_annotators if use_only_selected_annotators else annotator_names()
+        if len(agreement_annotators) <= 1:
+            st.info("For agreement calculation more than one annotator must be selected")
+        else:
+            entity_index = "Medikamente" if combined_drugs else " ".join(focus_entity.split()[1:])
+            ia_drug = instance_agreement(doc_id, focus_entity, agreement_annotators, combined_drugs)
+            ia_attr = instance_agreement(doc_id, focus_attribute, agreement_annotators)
+            st.write(pd.DataFrame(data={"instance": [ia_drug, ia_attr], "token": ["None", "None"]},
+                                  index=[entity_index, focus_attribute]))
         # # ----- Visualize Sentence Comparison ----- #
         sent_id = sents_with_anno[0] if len(sents_with_anno) >= 1 else None
         # --> Sentence Selection
@@ -479,13 +517,6 @@ def main():
             if fc_attribute_color_only:
                 a_focus = focus_attribute
             display_sentence_comparison(sel_annotators, sent_id, doc_id, e_focus, a_focus)
-            # display_sentence_comparison(sel_annotators, sent_id, doc_id, e_focus, a_focus)
-            # st.subheader("Annotation IDs for drugs:")
-            # st.write(doc_annotations_for_type(id_for_annotation_type(focus_entity), doc_id))
-            # st.subheader("Annotation IDs for attribute '{}':".format(focus_attribute))
-            # st.write(doc_annotations_for_type(id_for_annotation_type(focus_attribute), doc_id))
-
-            st.write(centroids_for_document(doc_id, focus_attribute, sel_annotators))
 
 
 main()
