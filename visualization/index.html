@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en-GB" xml:lang="en-GB" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8"/>
+    <link rel="stylesheet" type="text/css" href="static/styles/brat/style-vis.css"/>
+    <script type="text/javascript" src="static/js/lib/head.load.min.js"></script>
+</head>
+
+<script type="text/javascript">
+    const bratLocation = 'static';
+    head.js(
+        // External libraries
+        bratLocation + '/js/lib/jquery.min.js',
+        bratLocation + '/js/lib/jquery.svg.min.js',
+        bratLocation + '/js/lib/jquery.svgdom.min.js',
+
+
+        // brat helper modules
+        bratLocation + '/js/brat/configuration.js',
+        bratLocation + '/js/brat/util.js',
+        bratLocation + '/js/brat/annotation_log.js',
+        bratLocation + '/js/lib/webfont.js',
+        // brat modules
+        bratLocation + '/js/brat/dispatcher.js',
+        bratLocation + '/js/brat/url_monitor.js',
+        bratLocation + '/js/brat/visualizer.js'
+    );
+
+    const webFontURLs = [
+        bratLocation + '/fonts/Astloch-Bold.ttf',
+        bratLocation + '/fonts/PT_Sans-Caption-Web-Regular.ttf',
+        bratLocation + '/fonts/Liberation_Sans-Regular.ttf'
+    ];
+</script>
