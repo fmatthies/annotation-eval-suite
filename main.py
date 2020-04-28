@@ -6,12 +6,13 @@ import collections
 import sqlite3
 import streamlit as st
 import pandas as pd
+import requests
 from spacy import displacy
 from seaborn import color_palette
 from typing import List, Dict, Tuple, OrderedDict, Union
 
 import app_constants.constants as const
-from agreement import InstanceAgreement
+from agreement import InstanceAgreement, TokenAgreement
 
 
 # ToDo: replace table names with constants?
@@ -75,7 +76,7 @@ def return_entity_html(sentence, entities, focus_entity, focus_attribute):
     return displacy.render(ex, style="ent", manual=True, minify=True, options={"colors": colors})
 
 
-@st.cache()
+# @st.cache()
 def return_relation_html():
     rel = {
         "words": [
@@ -88,6 +89,14 @@ def return_relation_html():
             {"start": 3, "end": 0, "label": "", "dir": "right"}
         ]
     }
+    # words = "Have me some text".split()
+    # svg = svg_drawing.Drawing()
+    # x_last = 0
+    # for i, w in enumerate(words):
+    #     txt = svg_text.Text(w, insert=(x_last, 25))
+    #     svg.add(txt)
+    #     x_last += len(w) * 10 + 5
+    # return svg.tostring()
     return displacy.render(rel, style="dep", manual=True, minify=True,
                            options={"compact": True, "distance": 75})
 
@@ -371,6 +380,16 @@ def instance_agreement_obj_for_document(doc_id: str):
                              doc_id=doc_id, db_connection=db_connection())
 
 
+@st.cache(allow_output_mutation=True)
+def token_agreement_obj_for_document(doc_id: str):
+    """
+    :param doc_id:
+    :return:
+    """
+    return TokenAgreement(annotators=[id_for_annotator(a) for a in annotator_names()],
+                          doc_id=doc_id, db_connection=db_connection())
+
+
 @st.cache()
 def instance_agreement(doc_id: str, instance: str, annotators: list,
                        combined_entities: bool = True, combined_attributes: bool = False):
@@ -386,6 +405,23 @@ def instance_agreement(doc_id: str, instance: str, annotators: list,
     if combined_attributes and not is_drug_categorie(instance_id):
         instance_id = set(annotation_types()).difference(drug_type_ids())
     return ia.agreement_fscore(instance_type=instance_id, annotators=annotators, table=table)
+
+
+@st.cache()
+def token_agreement(doc_id: str, instance: str, annotators: list,
+                    combined_entities: bool = True, combined_attributes: bool = False):
+    if instance is None:
+        return 0
+    instance_id = id_for_annotation_type(instance)
+    annotators = [id_for_annotator(a) for a in annotators]
+    ta = token_agreement_obj_for_document(doc_id)
+    table = const.LAYER_TNAME_DICT[const.LayerTypes.MEDICATION_ENTITY] if is_drug_categorie(instance_id) \
+        else const.LAYER_TNAME_DICT[const.LayerTypes.MEDICATION_ATTRIBUTE]
+    if combined_entities and is_drug_categorie(instance_id):
+        instance_id = drug_type_ids()
+    if combined_attributes and not is_drug_categorie(instance_id):
+        instance_id = set(annotation_types()).difference(drug_type_ids())
+    return ta.agreement_fscore(instance_type=instance_id, annotators=annotators, table=table)
 
 
 @st.cache(allow_output_mutation=True)
@@ -434,6 +470,7 @@ def main():
         _ = [annotations_for_sentence_for_anno_list([id_for_annotator(a) for a in annotator_names()], sid)
              for sid in sents_with_anno]
         _ = instance_agreement_obj_for_document(doc_id)
+        _ = token_agreement_obj_for_document(doc_id)
         # ---> Set of annotation categories
         annotation_types = set(functools.reduce(
             lambda x, y: x + y, [_id_type.get("types")
@@ -482,9 +519,13 @@ def main():
             attribute_index = "(Attribute)" if combined_attributes else focus_attribute
             ia_drug = instance_agreement(doc_id, focus_entity, agreement_annotators,
                                          combined_entities=combined_entities)
+            ta_drug = token_agreement(doc_id, focus_entity, agreement_annotators,
+                                      combined_entities=combined_entities)
             ia_attr = instance_agreement(doc_id, focus_attribute, agreement_annotators,
                                          combined_attributes=combined_attributes)
-            agr_df = pd.DataFrame(data={"instance": [ia_drug, ia_attr], "token": [0, 0]},
+            ta_attr = token_agreement(doc_id, focus_attribute, agreement_annotators,
+                                      combined_attributes=combined_attributes)
+            agr_df = pd.DataFrame(data={"instance": [ia_drug, ia_attr], "token": [ta_drug, ta_attr]},
                                   index=[entity_index, attribute_index])
             st.dataframe(agr_df.style.format("{:." + str(agr_rounded_to) + "f}"))
         # # ----- Visualize Sentence Comparison ----- #
@@ -506,8 +547,6 @@ def main():
             if fc_attribute_color_only:
                 a_focus = focus_attribute
             display_sentence_comparison(sel_annotators, sent_id, doc_id, e_focus, a_focus)
-
-        st.write(return_relation_html(), unsafe_allow_html=True)
 
 
 main()

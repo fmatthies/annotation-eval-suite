@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en-GB" xml:lang="en-GB" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8"/>
+    <link rel="stylesheet" type="text/css" href="../static/styles/brat/style-vis.css"/>
+    <script type="text/javascript" src="../static/js/lib/head.load.min.js"></script>
+</head>
+
+<div id="embedding-entity-example"></div>
+
+<script type="text/javascript">
+    const bratLocation = 'static';
+    head.js(
+        // External libraries
+        bratLocation + '/js/lib/jquery.min.js',
+        bratLocation + '/js/lib/jquery.svg.min.js',
+        bratLocation + '/js/lib/jquery.svgdom.min.js',
+        // brat helper modules
+        bratLocation + '/js/brat/configuration.js',
+        bratLocation + '/js/brat/util.js',
+        bratLocation + '/js/brat/annotation_log.js',
+        bratLocation + '/js/lib/webfont.js',
+        // brat modules
+        bratLocation + '/js/brat/dispatcher.js',
+        bratLocation + '/js/brat/url_monitor.js',
+        bratLocation + '/js/brat/visualizer.js'
+    );
+
+    const webFontURLs = [
+        bratLocation + '/fonts/Astloch-Bold.ttf',
+        bratLocation + '/fonts/PT_Sans-Caption-Web-Regular.ttf',
+        bratLocation + '/fonts/Liberation_Sans-Regular.ttf'
+    ];
+
+    head.ready(function() {
+        var collData = {
+            entity_types: [ {
+                type   : 'Person',
+                /* The labels are used when displaying the annotion, in this case
+                    we also provide a short-hand "Per" for cases where
+                    abbreviations are preferable */
+                labels : ['Person', 'Per'],
+                // Blue is a nice colour for a person?
+                bgColor: '#7fa2ff',
+                // Use a slightly darker version of the bgColor for the border
+                borderColor: 'darken'
+            } ]
+        };
+        var docData = {
+            // Our text of choice
+            text     : "Ed O'Kelley was the man who shot the man who shot Jesse James.",
+            // The entities entry holds all entity annotations
+            entities : [
+                /* Format: [${ID}, ${TYPE}, [[${START}, ${END}]]]
+                    note that range of the offsets are [${START},${END}) */
+                ['T1', 'Person', [[0, 11]]],
+                ['T2', 'Person', [[20, 23]]],
+                ['T3', 'Person', [[37, 40]]],
+                ['T4', 'Person', [[50, 61]]],
+            ],
+        };
+        Util.embed('embedding-entity-example', $.extend({}, collData),
+            $.extend({}, docData), webFontURLs);
+    });
+</script>
