@@ -1,15 +1,13 @@
 # -*- coding: utf-8 -*-
 
 import functools
-import itertools
 import collections
 import sqlite3
 import streamlit as st
 import pandas as pd
-import requests
 from spacy import displacy
 from seaborn import color_palette
-from typing import List, Dict, Tuple, OrderedDict, Union
+from typing import List, OrderedDict, Union
 
 import app_constants.constants as const
 from agreement import InstanceAgreement, TokenAgreement
@@ -244,23 +242,6 @@ def annotation_types_for_layer_id(lid: str):
     )]
 
 
-#
-# @st.cache()
-# def annotation_ids_for_document(sentences: List, anno_layer: str) -> List[str]:
-#     where_clause = "WHERE sentence in {}".format(tuple(sentences))
-#     if len(sentences) == 1:
-#         where_clause = "WHERE sentence = '{}'".format(sentences[0])
-#     if len(sentences) == 0:
-#         return []
-#     return sorted([anno_t[0] for anno_t in db_connection().execute(
-#         """
-#         SELECT DISTINCT type
-#         FROM {0}
-#         {1};
-#         """.format(const.LAYER_TNAME_DICT.get(anno_layer), where_clause)
-#     )])
-
-
 @st.cache()
 def sentences_for_document(doc_id: str) -> OrderedDict[str, str]:
     return collections.OrderedDict((sents[0], sents[1]) for sents in db_connection().execute(
@@ -456,22 +437,23 @@ def main():
         file_up.empty()
         choice_desc.empty()
         create_temporary_db(fis)
+
         # ----- SIDEBAR ----- #
         st.sidebar.subheader("General")
         # --> Document Selection
         doc_name = st.sidebar.selectbox("Select document", document_titles())
         show_complete = st.sidebar.checkbox("Show complete document", False)
         doc_id = id_for_document(doc_name)
+
         # --> Annotation Selection
-        # -----> sents_dict = OrderedDict(sentence_id: sentence_text)
-        # -----> sents_with_anno = List(sentence_id)
         sents_with_anno = sentences_with_annotations(doc_id)
         # -----> Caching of "annotations for sentence" and "agreement":
         _ = [annotations_for_sentence_for_anno_list([id_for_annotator(a) for a in annotator_names()], sid)
              for sid in sents_with_anno]
         _ = instance_agreement_obj_for_document(doc_id)
         _ = token_agreement_obj_for_document(doc_id)
-        # ---> Set of annotation categories
+
+        # --> Set of annotation categories
         annotation_types = set(functools.reduce(
             lambda x, y: x + y, [_id_type.get("types")
                                  for _id_type in all_annotations_for_document(doc_id).values()], []
@@ -486,28 +468,26 @@ def main():
                                  options=[annotation_type_for_id(e).title() for e in annotation_types
                                           if not annotation_type_for_id(e).lower().startswith("medikament")])
         fc_attribute_color_only = st.sidebar.checkbox("Color only focus attribute", False)
+
         # --> Agreement Properties
         st.sidebar.subheader("Agreement Settings")
         combined_entities = st.sidebar.checkbox("All entities are one type", True)
         combined_attributes = st.sidebar.checkbox("All attributes are one type", False)
         use_only_selected_annotators = st.sidebar.checkbox("Use only selected annotators", True)
         agr_rounded_to = st.sidebar.slider("Round to", 1, 4, 2)
-        #     # match_type = select_match_type()
-        #     # threshold, boundary = 0, 0
-        #     # if match_type == "one_all":
-        #     #     threshold, boundary = get_threshold_boundary(_all_annotators)
-        st.sidebar.subheader("Sentences")
+
         # --> Annotator Selection
+        st.sidebar.subheader("Sentences")
         sel_annotators = st.sidebar.multiselect("Select annotators",
                                                 options=annotator_names(), default=annotator_names())
 
         # ----- DOCUMENT AGREEMENT VISUALIZATION ----- #
-        # ToDo: agreement calculation
         st.header("Document")
         if show_complete:
             st.write([s for s in sentences_for_document(doc_id).values()])
         else:
             st.info("Select 'Show complete document' in the sidebar")
+
         # # ----- Visualize Agreement Scores ----- #
         vis_anno = "all" if not use_only_selected_annotators else ", ".join(sel_annotators)
         st.header("Agreement ({})".format(vis_anno))
@@ -528,6 +508,7 @@ def main():
             agr_df = pd.DataFrame(data={"instance": [ia_drug, ia_attr], "token": [ta_drug, ta_attr]},
                                   index=[entity_index, attribute_index])
             st.dataframe(agr_df.style.format("{:." + str(agr_rounded_to) + "f}"))
+
         # # ----- Visualize Sentence Comparison ----- #
         sent_id = sents_with_anno[0] if len(sents_with_anno) >= 1 else None
         # --> Sentence Selection

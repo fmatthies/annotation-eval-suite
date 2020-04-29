@@ -26,18 +26,6 @@ class WebAnnoExport(Constant):
     ROOT = "annotation/"
 
 
-class Keys(Constant):
-    USER_ID = "user_ids"
-    ANNOTATIONS = "annotations"
-    DOCUMENT_ID = "document_ids"
-    TYPE_SYSTEM = "type_system"
-    SENTENCES = "sentences"
-
-
-class StringValues(Constant):
-    DOCUMENT_USER_KEY = "{}-{}"
-
-
 TABLES = {
     "sentences": {
         "stm": """(
