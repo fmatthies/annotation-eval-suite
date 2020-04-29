@@ -15,6 +15,9 @@
 #
 # default foreign keys for relations (cross table references):
 #   annotator -> annotators (id),
+#
+#
+# all that is configured here is to be seen as an addition to the database structure
 
 additional_database_info = {
     "entities": {  # <- contains all actual annotations in WebAnno that coincide with one or more tokens
@@ -24,12 +27,12 @@ additional_database_info = {
                 "recommendation": "integer"
             },
             "indexed_columns": [],
-            "reference_columns": []
+            "reference_columns": {}
         },
         "medication_attributes": {  # <- key has to conform to a "layers" key
             "columns": {},
             "indexed_columns": [],
-            "reference_columns": []
+            "reference_columns": {}
         }
     },
     "relations": {  # <- contains relation annotations between entities
