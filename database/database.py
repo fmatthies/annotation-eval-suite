@@ -10,7 +10,8 @@ import tqdm
 from cassis import Cas, load_typesystem, load_cas_from_xmi
 
 import uima
-import app_constants.constants as const
+# import app_constants.constants as const
+from app_constants import database_info, db_construction, layers
 
 logging.basicConfig(level=logging.WARNING)
 

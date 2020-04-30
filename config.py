@@ -43,8 +43,14 @@ additional_database_info = {
             },
             "indexed_columns": ["entity"],
             "reference_columns": {
-                "entity": "medication_entities (id)",
-                "attribute": "medication_attributes (id)"
+                "entity": {  # <- name of the column for this table
+                    "table": "medication_entities",  # <- name of the referenced table
+                    "column": "id"  # <- name of the referenced column of the referenced table
+                },
+                "attribute": {
+                    "table": "medication_attributes",
+                    "column": "id"
+                }
             }
         }
     }
