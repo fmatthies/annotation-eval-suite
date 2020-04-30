@@ -19,6 +19,7 @@
 #
 # all that is configured here is to be seen as an addition to the database structure
 
+# ToDo: describe SQLite data types
 additional_database_info = {
     "entities": {  # <- contains all actual annotations in WebAnno that coincide with one or more tokens
         "medication_entities": {  # <- key has to conform to a "layers" key

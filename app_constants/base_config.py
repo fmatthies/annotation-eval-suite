@@ -2,7 +2,35 @@ import sys
 import logging
 from typing import Union
 
+from aenum import Constant
+
 import config
+
+
+class DefaultTableNames(Constant):
+    annotation_types = "annotation_types"
+    layers = "layers"
+    annotators = "annotators"
+    documents = "documents"
+    sentences = "sentences"
+
+
+class DatabaseCategories(Constant):
+    entities = "entities"
+    relations = "relations"
+    base = "base"
+
+
+class DatabaseConstructionKeys(Constant):
+    columns = "columns"
+    indices = "indexed_columns"
+    foreign_keys = "reference_columns"
+
+
+class SQLiteDataTypes(Constant):
+    string = "text"
+    boolean = "integer"
+    integer = "integer"
 
 
 def get_foreign_keys(foreign_keys: Union[dict, None] = None):
@@ -27,15 +55,15 @@ def get_db_structure(columns: Union[dict, None] = None, foreign_keys: Union[dict
 
 
 def construct_db_dict(e_types: list, db_info: dict, basic_info: dict, entity_info: dict):
-    e_types.append("base")
+    e_types.append(DatabaseCategories.base)
     _db = {}
     for entry_type in e_types:
-        _entity = True if entry_type == "entities" else False
+        _entity = True if entry_type == DatabaseCategories.entities else False
         for entry_name, entry_dict in db_info.get(entry_type).items():
             try:
-                _columns: dict = entry_dict["columns"]
-                _indexed_columns: list = entry_dict["indexed_columns"]
-                _foreign_keys: dict = entry_dict["reference_columns"]
+                _columns: dict = entry_dict[DatabaseConstructionKeys.columns]
+                _indexed_columns: list = entry_dict[DatabaseConstructionKeys.indices]
+                _foreign_keys: dict = entry_dict[DatabaseConstructionKeys.foreign_keys]
             except KeyError:
                 logging.error("Please check if the keys 'columns', 'indexed_columns' or 'reference_columns' "
                               "of the '{e_type} - {e_name}' information in 'config.py' are present "
@@ -44,14 +72,14 @@ def construct_db_dict(e_types: list, db_info: dict, basic_info: dict, entity_inf
                               )
                 sys.exit(-1)
 
-            if not entry_type == "base":
-                _columns.update(basic_info.get("columns"))
-                _indexed_columns.extend(basic_info.get("indexed_columns"))
-                _foreign_keys.update(basic_info.get("reference_columns"))
+            if not entry_type == DatabaseCategories.base:
+                _columns.update(basic_info.get(DatabaseConstructionKeys.columns))
+                _indexed_columns.extend(basic_info.get(DatabaseConstructionKeys.indices))
+                _foreign_keys.update(basic_info.get(DatabaseConstructionKeys.foreign_keys))
             if _entity:
-                _columns.update(entity_info.get("columns"))
-                _indexed_columns.extend(entity_info.get("indexed_columns"))
-                _foreign_keys.update(entity_info.get("reference_columns"))
+                _columns.update(entity_info.get(DatabaseConstructionKeys.columns))
+                _indexed_columns.extend(entity_info.get(DatabaseConstructionKeys.indices))
+                _foreign_keys.update(entity_info.get(DatabaseConstructionKeys.foreign_keys))
             _foreign_keys = None if len(_foreign_keys) == 0 else _foreign_keys
             _db[entry_name] = {
                 "stm": get_db_structure(columns=_columns, foreign_keys=_foreign_keys),
@@ -62,6 +90,7 @@ def construct_db_dict(e_types: list, db_info: dict, basic_info: dict, entity_inf
 
 def check_for_conformity(e_types: list):
     # ToDo: check for conformity between column declarations and indexed/referenced column names
+    # ToDo: check for conformity of data types
     if len(set(e_types).difference(config.additional_database_info.keys())) > 0:
         logging.error(
             " Please check if the keys of 'additional_database_info' are equal to and conform with {conform}!\n"
@@ -82,93 +111,92 @@ def check_for_conformity(e_types: list):
         sys.exit(-1)
 
 
-entry_types = ["entities", "relations"]
+entry_types = [DatabaseCategories.entities, DatabaseCategories.relations]
 
 database_info = {
-    "base": {
-        "annotators": {
-            "columns": {
-                "id": "text",
-                "annotator": "text"
+    DatabaseCategories.base: {
+        DefaultTableNames.annotators: {
+            DatabaseConstructionKeys.columns: {
+                "id": SQLiteDataTypes.string,
+                "annotator": SQLiteDataTypes.string
             },
-            "indexed_columns": ["annotator"],
-            "reference_columns": {}
+            DatabaseConstructionKeys.indices: ["annotator"],
+            DatabaseConstructionKeys.foreign_keys: {}
         },
-        "documents": {
-            "columns": {
-                "id": "text",
-                "document": "text"
+        DefaultTableNames.documents: {
+            DatabaseConstructionKeys.columns: {
+                "id": SQLiteDataTypes.string,
+                "document": SQLiteDataTypes.string
             },
-            "indexed_columns": ["document"],
-            "reference_columns": {}
+            DatabaseConstructionKeys.indices: ["document"],
+            DatabaseConstructionKeys.foreign_keys: {}
         },
-        "sentences": {
-            "columns": {
-                "id": "text",
-                "begin": "integer",
-                "end": "integer",
-                "document": "text",
-                "text": "text",
-                "has_annotation": "integer"
+        DefaultTableNames.sentences: {
+            DatabaseConstructionKeys.columns: {
+                "id": SQLiteDataTypes.string,
+                "begin": SQLiteDataTypes.integer,
+                "end": SQLiteDataTypes.integer,
+                "document": SQLiteDataTypes.string,
+                "text": SQLiteDataTypes.string,
+                "has_annotation": SQLiteDataTypes.boolean
             },
-            "indexed_columns": [],
-            "reference_columns": {
+            DatabaseConstructionKeys.indices: [],
+            DatabaseConstructionKeys.foreign_keys: {
                 "document": {
-                    "table": "documents",
+                    "table": DefaultTableNames.documents,
                     "column": "id"
                 }
             }
         },
-        "annotation_types": {
-            "columns": {
-                "id": "text",
-                "type": "text",
-                "layer": "text"
+        DefaultTableNames.annotation_types: {
+            DatabaseConstructionKeys.columns: {
+                "id": SQLiteDataTypes.string,
+                "type": SQLiteDataTypes.string,
+                "layer": SQLiteDataTypes.string
             },
-            "indexed_columns": ["type", "layer"],
-            "reference_columns": {
+            DatabaseConstructionKeys.indices: ["type", "layer"],
+            DatabaseConstructionKeys.foreign_keys: {
                 "layer": {
-                    "table": "layers",
+                    "table": DefaultTableNames.layers,
                     "column": "id"
                 }
             }
         },
-        "layers": {
-            "columns": {
-                "id": "text",
-                "layer": "text"
+        DefaultTableNames.layers: {
+            DatabaseConstructionKeys.columns: {
+                "id": SQLiteDataTypes.string,
+                "layer": SQLiteDataTypes.string
             },
-            "indexed_columns": ["layer"],
-            "reference_columns": {}
+            DatabaseConstructionKeys.indices: ["layer"],
+            DatabaseConstructionKeys.foreign_keys: {}
         }
     }
 }
 
 basic_general_info = {
-    "columns": {
-        "id": "text",
-        "annotator": "text",
+    DatabaseConstructionKeys.columns: {
+        "id": SQLiteDataTypes.string,
+        "annotator": SQLiteDataTypes.string,
     },
-    "indexed_columns": [],
-    "reference_columns": {
+    DatabaseConstructionKeys.indices: [],
+    DatabaseConstructionKeys.foreign_keys: {
         "annotator": {
-            "table": "annotators",
+            "table": DefaultTableNames.annotators,
             "column": "id"
         }
     }
 }
 
 additional_entity_info = {
-    "columns": {
-        "begin": "integer",
-        "end": "integer",
-        "text": "text",
-        "sentence": "text",
-        "document": "text",
-        "type": "text",
+    DatabaseConstructionKeys.columns: {
+        "begin": SQLiteDataTypes.integer,
+        "end": SQLiteDataTypes.integer,
+        "text": SQLiteDataTypes.string,
+        "sentence": SQLiteDataTypes.string,
+        "document": SQLiteDataTypes.string
     },
-    "indexed_columns": ["type", "sentence"],
-    "reference_columns": {
+    DatabaseConstructionKeys.indices: ["sentence", "type"],
+    DatabaseConstructionKeys.foreign_keys: {
         "sentence": {
             "table": "sentences",
             "column": "id"
@@ -182,9 +210,10 @@ additional_entity_info = {
 
 check_for_conformity(entry_types)
 
-layers = config.layers.update({
-    "sentences": "de.tudarmstadt.ukp.dkpro.core.api.segmentation.type.Sentence",
-})
+layers = {
+    DefaultTableNames.sentences: "de.tudarmstadt.ukp.dkpro.core.api.segmentation.type.Sentence",
+}
+layers.update(config.layers)
 
 database_info.update(config.additional_database_info)
 db_construction = construct_db_dict(entry_types, database_info, basic_general_info, additional_entity_info)

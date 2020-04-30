@@ -10,8 +10,9 @@ import tqdm
 from cassis import Cas, load_typesystem, load_cas_from_xmi
 
 import uima
-# import app_constants.constants as const
-from app_constants import database_info, db_construction, layers
+from app_constants import database_info, db_construction, layers, DefaultTableNames
+from config import additional_database_info
+from config import layers as user_layers
 
 logging.basicConfig(level=logging.WARNING)
 
@@ -208,8 +209,7 @@ def get_anno_type_id(anno_types: list, anno_type: str, layer_id: str, ds: DataSa
         store_into_db = True
     anno_type_id = str(anno_types.index(anno_type))
     if store_into_db:
-        ds.store_into_table(const.LAYER_TNAME_DICT.get(const.LayerTypes.ANNOTATION_TYPE),
-                            id=anno_type_id, type=anno_type, layer=layer_id)
+        ds.store_into_table(DefaultTableNames.annotation_types, id=anno_type_id, type=anno_type, layer=layer_id)
     return anno_type_id
 
 
@@ -221,8 +221,7 @@ def get_layer_id(l_types: list, layer: str, ds: DataSaver):
         store_into_db = True
     layer_id = str(l_types.index(layer))
     if store_into_db:
-        ds.store_into_table(const.LAYER_TNAME_DICT.get(const.LayerTypes.LAYER),
-                            id=layer_id, layer=layer)
+        ds.store_into_table(DefaultTableNames.layers, id=layer_id, layer=layer)
     return layer_id
 
 
@@ -232,46 +231,48 @@ def store_xmi_in_db(cas: Cas, annotator: str, annotator_id: str, document: str, 
     # ToDo: tences in each following cas (after the first one) and don't try to put them into the db in the first place
     # ToDo: (as well as annotators and documents)
     # ToDo: --> only true for annotators and documents; do I need to change this?
-    ds.store_into_table(const.LAYER_TNAME_DICT.get(const.LayerTypes.ANNOTATOR), ignore_duplicates=True,
-                        id=annotator_id, annotator=annotator)
-    ds.store_into_table(const.LAYER_TNAME_DICT.get(const.LayerTypes.DOCUMENT), ignore_duplicates=True,
-                        id=document_id, document=document)
-    for sentence in cas.select(const.LayerTypes.SENTENCE):
+    ds.store_into_table(DefaultTableNames.annotators, ignore_duplicates=True, id=annotator_id, annotator=annotator)
+    ds.store_into_table(DefaultTableNames.documents, ignore_duplicates=True, id=document_id, document=document)
+    for sentence in cas.select(layers.get(DefaultTableNames.sentences)):
         has_annotation = False
         sentence_id = "{}-{}".format(document_id, str(sentence.xmiID))
-        layer = const.LayerTypes.MEDICATION_ENTITY
-        for entity in cas.select_covered(const.LayerTypes.MEDICATION_ENTITY, sentence):
-            ent = uima.LAYER_DICT.get(const.LayerTypes.MEDICATION_ENTITY)(entity, cas)
-            anno_type = ent.get_fs_property(const.LayerProperties.MEDICATION_ENTITY_TYPE)
-            entity_id = "{}-{}".format(annotator_id, str(ent.xmi_id))
-            ds.store_into_table(const.LAYER_TNAME_DICT.get(const.LayerTypes.MEDICATION_ENTITY),
-                                id=entity_id, annotator=annotator_id,
-                                begin=(int(ent.begin) - int(sentence.begin)), end=(int(ent.end) - int(sentence.begin)),
-                                text=ent.covered_text, sentence=sentence_id, document=document_id,
-                                type=get_anno_type_id(anno_types, anno_type, get_layer_id(l_types, layer, ds), ds),
-                                list=1 if ent.get_fs_property(const.LayerProperties.MEDICATION_ENTITY_IS_LIST) else 0,
-                                recommendation=1 if ent.get_fs_property(const.LayerProperties.MEDICATION_ENTITY_IS_RECOMMENDATION) else 0)
-            has_annotation = True
-        layer = const.LayerTypes.MEDICATION_ATTRIBUTE
-        for attribute in cas.select_covered(const.LayerTypes.MEDICATION_ATTRIBUTE, sentence):
-            attr = uima.LAYER_DICT.get(const.LayerTypes.MEDICATION_ATTRIBUTE)(attribute, cas)
-            anno_type = attr.get_fs_property(const.LayerProperties.MEDICATION_ATTRIBUTE_TYPE)
-            attribute_id = "{}-{}".format(annotator_id, str(attr.xmi_id))
-            ds.store_into_table(const.LAYER_TNAME_DICT.get(const.LayerTypes.MEDICATION_ATTRIBUTE),
-                                id=attribute_id, annotator=annotator_id,
-                                begin=(int(attr.begin) - int(sentence.begin)), end=(int(attr.end) - int(sentence.begin)),
-                                text=attr.covered_text, sentence=sentence_id, document=document_id,
-                                type=get_anno_type_id(anno_types, anno_type, get_layer_id(l_types, layer, ds), ds))
-            has_annotation = True
-            for rel_ent in attr.get_fs_property(const.LayerProperties.MEDICATION_ATTRIBUTE_RELATION):
-                rel_id = rel_ent[0]
-                rel_target = rel_ent[1]
-                relation_id = "{}-{}".format(annotator_id, str(rel_id))
-                ds.store_into_table(const.LAYER_TNAME_DICT.get(const.LayerTypes.RELATION),
-                                    id=relation_id, annotator=annotator_id,
-                                    entity="{}-{}".format(annotator_id, str(rel_target.xmi_id)),
-                                    attribute=attribute_id)
-
+        # layer = const.LayerTypes.MEDICATION_ENTITY
+        # for entity in cas.select_covered(const.LayerTypes.MEDICATION_ENTITY, sentence):
+        #     ent = uima.LAYER_DICT.get(const.LayerTypes.MEDICATION_ENTITY)(entity, cas)
+        #     anno_type = ent.get_fs_property(const.LayerProperties.MEDICATION_ENTITY_TYPE)
+        #     entity_id = "{}-{}".format(annotator_id, str(ent.xmi_id))
+        #     ds.store_into_table(const.LAYER_TNAME_DICT.get(const.LayerTypes.MEDICATION_ENTITY),
+        #                         id=entity_id, annotator=annotator_id,
+        #                         begin=(int(ent.begin) - int(sentence.begin)), end=(int(ent.end) - int(sentence.begin)),
+        #                         text=ent.covered_text, sentence=sentence_id, document=document_id,
+        #                         type=get_anno_type_id(anno_types, anno_type, get_layer_id(l_types, layer, ds), ds),
+        #                         list=1 if ent.get_fs_property(const.LayerProperties.MEDICATION_ENTITY_IS_LIST) else 0,
+        #                         recommendation=1 if ent.get_fs_property(
+        #                             const.LayerProperties.MEDICATION_ENTITY_IS_RECOMMENDATION) else 0)
+        #     has_annotation = True
+        # layer = const.LayerTypes.MEDICATION_ATTRIBUTE
+        # for attribute in cas.select_covered(const.LayerTypes.MEDICATION_ATTRIBUTE, sentence):
+        #     attr = uima.LAYER_DICT.get(const.LayerTypes.MEDICATION_ATTRIBUTE)(attribute, cas)
+        #     anno_type = attr.get_fs_property(const.LayerProperties.MEDICATION_ATTRIBUTE_TYPE)
+        #     attribute_id = "{}-{}".format(annotator_id, str(attr.xmi_id))
+        #     ds.store_into_table(const.LAYER_TNAME_DICT.get(const.LayerTypes.MEDICATION_ATTRIBUTE),
+        #                         id=attribute_id, annotator=annotator_id,
+        #                         begin=(int(attr.begin) - int(sentence.begin)),
+        #                         end=(int(attr.end) - int(sentence.begin)),
+        #                         text=attr.covered_text, sentence=sentence_id, document=document_id,
+        #                         type=get_anno_type_id(anno_types, anno_type, get_layer_id(l_types, layer, ds), ds))
+        #     has_annotation = True
+        #     for rel_ent in attr.get_fs_property(const.LayerProperties.MEDICATION_ATTRIBUTE_RELATION):
+        #         rel_id = rel_ent[0]
+        #         rel_target = rel_ent[1]
+        #         relation_id = "{}-{}".format(annotator_id, str(rel_id))
+        #         ds.store_into_table(const.LAYER_TNAME_DICT.get(const.LayerTypes.RELATION),
+        #                             id=relation_id, annotator=annotator_id,
+        #                             entity="{}-{}".format(annotator_id, str(rel_target.xmi_id)),
+        #                             attribute=attribute_id)
+        for layer_name, layer_fqn in user_layers.items():
+            for anno_fs in cas.select_covered(layer_fqn, sentence):
+                annotation = uima.WebAnnoLayer(layer_fqn, )
         if sentence_id not in s_list:
             s_list.add(sentence_id)
             ds.store_into_table(const.LAYER_TNAME_DICT.get(const.LayerTypes.SENTENCE),

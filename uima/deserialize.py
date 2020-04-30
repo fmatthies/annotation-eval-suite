@@ -2,9 +2,10 @@ import os
 import zipfile
 import io
 import typing
+from xml.etree import ElementTree
 from collections import defaultdict
 
-
+import config
 import app_constants.constants as const
 
 
@@ -41,3 +42,16 @@ def get_project_files(zipped_file: str, type_system: str = const.WebAnnoExport.T
     xmi_dict["documents"] = doc_dict
     xmi_dict["annotators"] = anno_dict
     return xmi_dict
+
+
+def get_layer_information_from_type_system(type_system: io.BytesIO, layer_fqn: dict):
+    ns = "{http://uima.apache.org/resourceSpecifier}"
+    et = ElementTree.parse(type_system)
+    layers = {v: k for k, v in layer_fqn.items()}
+    annotations = [gc for c in et.getroot() for gc in c if gc.find(ns+"name").text in layers.keys()]
+
+
+if __name__ == "__main__":
+    fi = os.path.abspath("../test/test-resources/test_project.zip")
+    fi_dict = get_project_files(fi)
+    get_layer_information_from_type_system(fi_dict.get("TypeSystem.xml"), config.layers)
