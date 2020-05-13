@@ -22,7 +22,7 @@ class DatabaseCategories(Constant):
 
 
 class DatabaseConstructionKeys(Constant):
-    columns = "columns"
+    columns = "additional_columns"
     indices = "indexed_columns"
     foreign_keys = "reference_columns"
 

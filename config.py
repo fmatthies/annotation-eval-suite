@@ -23,22 +23,24 @@
 additional_database_info = {
     "entities": {  # <- contains all actual annotations in WebAnno that coincide with one or more tokens
         "medication_entities": {  # <- key has to conform to a "layers" key
-            "columns": {
-                "list": "integer",
-                "recommendation": "integer"
+            # "type": "drugType",  # <- every annotation needs a type, this maps it to the WebAnno internal name
+            "additional_columns": {  # <- additional WebAnno features of the annos that should be integrated in the app
+                "isList": "integer",
+                "isRecommendation": "integer"
             },
             "indexed_columns": [],
             "reference_columns": {}
         },
         "medication_attributes": {  # <- key has to conform to a "layers" key
-            "columns": {},
+            # "type": "attributeType",  # <- every annotation needs a type, this maps it to the WebAnno internal name
+            "additional_columns": {},
             "indexed_columns": [],
             "reference_columns": {}
         }
     },
     "relations": {  # <- contains relation annotations between entities
         "medication_relations": {  # <- key has to conform to a "layers" key
-            "columns": {
+            "additional_columns": {
                 "entity": "text",
                 "attribute": "text"
             },
@@ -61,5 +63,5 @@ additional_database_info = {
 layers = {
     "medication_entities": "webanno.custom.MedicationEntity",
     "medication_attributes": "webanno.custom.MedicationAttribute",
-    "medication_relations": "webanno.custom.MedicationAttributeRelationTypeLink"
+    # "medication_relations": "webanno.custom.MedicationAttributeRelationTypeLink"
 }

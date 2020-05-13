@@ -1,12 +1,59 @@
 import os
+import re
 import zipfile
 import io
 import typing
-from xml.etree import ElementTree
+import logging
+from xmltodict3 import xml_to_dict
 from collections import defaultdict
+from aenum import Constant
+from typing import Dict
 
 import config
 import app_constants.constants as const
+
+logging.basicConfig(level=logging.INFO)
+
+
+class DeserializeConstants(Constant):
+    annotation = "annotation"
+    relation = "relation"
+    relation_identifier = "RelationTypeLink"
+    webanno_custom = "webanno.custom"
+
+
+class WebAnnoLayerType:
+    def __init__(self, type_description: dict):
+        self._fqn = type_description.get('name')
+        self._features = {f.pop('name'): f for f in type_description.get('features').get('featureDescription')}
+        self._type = DeserializeConstants.annotation
+        if DeserializeConstants.relation_identifier.lower() in self.name.lower():
+            self._type = DeserializeConstants.relation
+        self._target = None
+
+    @property
+    def name(self):
+        return self._fqn.split(".")[-1]
+
+    @property
+    def fqn(self):
+        return self._fqn
+
+    @property
+    def features(self):
+        return self._features
+
+    @property
+    def of_type(self):
+        return self._type
+
+    @property
+    def dependency(self):
+        return self._target
+
+    @dependency.setter
+    def dependency(self, annotation):
+        self._target = annotation
 
 
 def get_project_files(zipped_file: str, type_system: str = const.WebAnnoExport.TYPE_SYSTEM)\
@@ -44,11 +91,35 @@ def get_project_files(zipped_file: str, type_system: str = const.WebAnnoExport.T
     return xmi_dict
 
 
+def resolve_relations(annotation: WebAnnoLayerType,
+                      annotations: Dict[str, WebAnnoLayerType], relations: Dict[str, WebAnnoLayerType]):
+    for feat_name, feat in annotation.features.items():
+        relation = feat.get('elementType', None)
+        if relation and relation in relations.keys():
+            logging.info("resolve '{} -> {}'".format(annotation.fqn, relation))
+            relation_obj = relations.get(relation)
+            target_fqn = relation_obj.features.get('target').get('rangeTypeName')
+            annotation.dependency = annotations.get(target_fqn)
+
+
 def get_layer_information_from_type_system(type_system: io.BytesIO, layer_fqn: dict):
-    ns = "{http://uima.apache.org/resourceSpecifier}"
-    et = ElementTree.parse(type_system)
+    annotations = {}
+    relations = {}
     layers = {v: k for k, v in layer_fqn.items()}
-    annotations = [gc for c in et.getroot() for gc in c if gc.find(ns+"name").text in layers.keys()]
+    xml_dict = xml_to_dict.XmlTextToDict(
+        type_system.read().decode('utf-8'),
+        ignore_namespace=True).get_dict()
+    for annotation in xml_dict.get('typeSystemDescription').get('types').get('typeDescription'):
+        if DeserializeConstants.webanno_custom.lower() in annotation.get('name').lower():
+            wal = WebAnnoLayerType(annotation)
+            if wal.fqn in layers.keys() and wal.of_type == DeserializeConstants.annotation:
+                annotations[wal.fqn] = wal
+            elif wal.of_type == DeserializeConstants.relation:
+                relations[wal.fqn] = wal
+            print(wal.name)
+            print(wal.features)
+    for anno in annotations.values():
+        resolve_relations(anno, annotations, relations)
 
 
 if __name__ == "__main__":

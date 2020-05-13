@@ -1,4 +1,4 @@
-aenum==2.2.1
+aenum~=2.2.3
 altair==4.0.1
 asn1crypto==1.3.0
 astor==0.8.1
@@ -89,8 +89,8 @@ seaborn==0.10.0
 Send2Trash==1.5.0
 six==1.14.0
 sortedcontainers==2.1.0
-spacy==2.0.16
-streamlit==0.57.2
+spacy~=2.2.4
+streamlit~=0.57.3
 TBB==0.1
 terminado==0.8.3
 testpath==0.4.4
@@ -99,7 +99,7 @@ toml==0.10.0
 toolz==0.10.0
 toposort==1.5
 tornado==5.1.1
-tqdm==4.43.0
+tqdm~=4.45.0
 traitlets==4.3.3
 tzlocal==2.0.0
 ujson==1.35
@@ -113,3 +113,5 @@ win-inet-pton==1.1.0
 wincertstore==0.2
 wrapt==1.10.11
 zipp==3.1.0
+
+xmltodict3~=0.0.2
