@@ -29,6 +29,7 @@ class WebAnnoLayerType:
         self._type = DeserializeConstants.annotation
         if DeserializeConstants.relation_identifier.lower() in self.name.lower():
             self._type = DeserializeConstants.relation
+        self._source = None
         self._target = None
 
     @property
@@ -54,6 +55,22 @@ class WebAnnoLayerType:
     @dependency.setter
     def dependency(self, annotation):
         self._target = annotation
+
+    @property
+    def source(self):
+        if self.of_type != DeserializeConstants.relation:
+            logging.warning(" Tried to access 'source' property: "
+                            "{} is not a relation and has no 'source'.".format(self._fqn))
+        return self._source
+
+    @source.setter
+    def source(self, source):
+        if self.of_type != DeserializeConstants.relation:
+            logging.warning(" Tried to set 'source' property: "
+                            "{} is not a relation and accepts no 'source'. "
+                            "Continue without setting 'source'...".format(self._fqn))
+        else:
+            self._source = source
 
 
 def get_project_files(zipped_file: str, type_system: str = const.WebAnnoExport.TYPE_SYSTEM)\
@@ -96,10 +113,14 @@ def resolve_relations(annotation: WebAnnoLayerType,
     for feat_name, feat in annotation.features.items():
         relation = feat.get('elementType', None)
         if relation and relation in relations.keys():
-            logging.info("resolve '{} -> {}'".format(annotation.fqn, relation))
+            logging.info(" resolve '{} -> {}'".format(annotation.fqn, relation))
             relation_obj = relations.get(relation)
             target_fqn = relation_obj.features.get('target').get('rangeTypeName')
-            annotation.dependency = annotations.get(target_fqn)
+            dependency = annotations.get(target_fqn)
+
+            annotation.dependency = dependency
+            relation_obj.source = annotation
+            relation_obj.dependency = dependency
 
 
 def get_layer_information_from_type_system(type_system: io.BytesIO, layer_fqn: dict):
@@ -110,19 +131,20 @@ def get_layer_information_from_type_system(type_system: io.BytesIO, layer_fqn: d
         type_system.read().decode('utf-8'),
         ignore_namespace=True).get_dict()
     for annotation in xml_dict.get('typeSystemDescription').get('types').get('typeDescription'):
-        if DeserializeConstants.webanno_custom.lower() in annotation.get('name').lower():
+        if DeserializeConstants.webanno_custom.lower() in annotation.get('name').lower():  # this makes it regard only custom layers!
             wal = WebAnnoLayerType(annotation)
             if wal.fqn in layers.keys() and wal.of_type == DeserializeConstants.annotation:
                 annotations[wal.fqn] = wal
             elif wal.of_type == DeserializeConstants.relation:
                 relations[wal.fqn] = wal
-            print(wal.name)
-            print(wal.features)
     for anno in annotations.values():
         resolve_relations(anno, annotations, relations)
+
+    return {"annotations": annotations, "relations": relations}
 
 
 if __name__ == "__main__":
     fi = os.path.abspath("../test/test-resources/test_project.zip")
     fi_dict = get_project_files(fi)
-    get_layer_information_from_type_system(fi_dict.get("TypeSystem.xml"), config.layers)
+    info = get_layer_information_from_type_system(fi_dict.get("TypeSystem.xml"), config.layers)
+    print(info)
