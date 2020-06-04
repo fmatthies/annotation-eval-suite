@@ -11,7 +11,6 @@ from cassis import Cas, load_typesystem, load_cas_from_xmi
 
 import uima
 from app_constants import database_info, db_construction, layers, DefaultTableNames
-from config import additional_database_info
 from config import layers as user_layers
 
 logging.basicConfig(level=logging.WARNING)
@@ -226,7 +225,7 @@ def get_layer_id(l_types: list, layer: str, ds: DataSaver):
 
 
 def store_xmi_in_db(cas: Cas, annotator: str, annotator_id: str, document: str, document_id: str,
-                    anno_types: list, l_types: list, s_list: set, ds: DataSaver):
+                    anno_types: list, l_types: list, s_list: set, ds: DataSaver, layer_info: dict):
     # ToDo: right now ds.store_into_table IGNOREs duplicate sentence ids, but it would be better if I catch the sen-
     # ToDo: tences in each following cas (after the first one) and don't try to put them into the db in the first place
     # ToDo: (as well as annotators and documents)
@@ -236,6 +235,9 @@ def store_xmi_in_db(cas: Cas, annotator: str, annotator_id: str, document: str, 
     for sentence in cas.select(layers.get(DefaultTableNames.sentences)):
         has_annotation = False
         sentence_id = "{}-{}".format(document_id, str(sentence.xmiID))
+        for layer, layer_obj in layer_info.get("annotations").items():
+            for entity in cas.select_covered(layer, sentence):
+                uima
         # layer = const.LayerTypes.MEDICATION_ENTITY
         # for entity in cas.select_covered(const.LayerTypes.MEDICATION_ENTITY, sentence):
         #     ent = uima.LAYER_DICT.get(const.LayerTypes.MEDICATION_ENTITY)(entity, cas)
@@ -291,6 +293,7 @@ if __name__ == '__main__':
     in_memory = False if len(sys.argv) <= 2 else sys.argv[2].lower() in ["true", "t", "yes", "y"]
     db_file = os.path.abspath("../test/test-resources/test_project.db" if len(sys.argv) <= 3 else sys.argv[3])
     reset_db = not (False if len(sys.argv) <= 4 else sys.argv[4].lower() in ["false", "f", "no", "n"])
+    ts_string_key = "TypeSystem.xml"
 
     print("""
     Starting with these options:
@@ -300,13 +303,14 @@ if __name__ == '__main__':
     reset db:       {}
     """.format(project_file, db_file, in_memory, reset_db))
 
-    xmi_dict = uima.get_project_files(project_file, const.WebAnnoExport.TYPE_SYSTEM)
-    typesystem = load_typesystem(xmi_dict.get(const.WebAnnoExport.TYPE_SYSTEM))
+    xmi_dict = uima.get_project_files(project_file, ts_string_key)
+    ts_string = xmi_dict.get(ts_string_key).read().decode('utf-8')
+    typesystem = load_typesystem(ts_string)
+    l_info = uima.get_layer_information_from_type_system(ts_string, user_layers)
 
     db_util = DBUtils(in_memory=in_memory, db_file=db_file)
     db_util.create_connection()
-    data_saver = DataSaver(db_util, const.TABLES, reset_db=reset_db)
-
+    data_saver = DataSaver(db_util, db_construction, reset_db=reset_db)
     pbar = tqdm.tqdm(total=(len(xmi_dict.get("documents"))*len(xmi_dict.get("annotators"))))
 
     annotation_types = list()
@@ -319,7 +323,7 @@ if __name__ == '__main__':
             if xmi:
                 anno_cas = load_cas_from_xmi(xmi, typesystem=typesystem)
                 updated = store_xmi_in_db(anno_cas, anno, a_id, doc, d_id,
-                                          annotation_types, layer_types, sentence_list, data_saver)
+                                          annotation_types, layer_types, sentence_list, data_saver, l_info)
             if updated:
                 pbar.update(1)
     db_util.close_connection()

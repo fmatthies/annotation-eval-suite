@@ -73,7 +73,7 @@ class WebAnnoLayerType:
             self._source = source
 
 
-def get_project_files(zipped_file: str, type_system: str = const.WebAnnoExport.TYPE_SYSTEM)\
+def get_project_files(zipped_file: str, type_system: str = "TypeSystem.xml")\
         -> typing.Dict[str, typing.Union[typing.Dict[str, io.BytesIO], io.BytesIO]]:
     xmi_dict = defaultdict(dict)
     doc_dict = dict()
@@ -123,13 +123,12 @@ def resolve_relations(annotation: WebAnnoLayerType,
             relation_obj.dependency = dependency
 
 
-def get_layer_information_from_type_system(type_system: io.BytesIO, layer_fqn: dict):
+def get_layer_information_from_type_system(type_system: typing.Union[io.BytesIO, str], layer_fqn: dict):
     annotations = {}
     relations = {}
     layers = {v: k for k, v in layer_fqn.items()}
-    xml_dict = xml_to_dict.XmlTextToDict(
-        type_system.read().decode('utf-8'),
-        ignore_namespace=True).get_dict()
+    ts = type_system.read().decode('utf-8') if isinstance(type_system, io.BytesIO) else type_system
+    xml_dict = xml_to_dict.XmlTextToDict(ts, ignore_namespace=True).get_dict()
     for annotation in xml_dict.get('typeSystemDescription').get('types').get('typeDescription'):
         if DeserializeConstants.webanno_custom.lower() in annotation.get('name').lower():  # this makes it regard only custom layers!
             wal = WebAnnoLayerType(annotation)

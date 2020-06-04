@@ -203,11 +203,11 @@ additional_entity_info = {
     DatabaseConstructionKeys.indices: ["sentence", "type"],
     DatabaseConstructionKeys.foreign_keys: {
         "sentence": {
-            "table": "sentences",
+            "table": DefaultTableNames.sentences,
             "column": "id"
         },
         "type": {
-            "table": "annotation_types",
+            "table": DefaultTableNames.annotation_types,
             "column": "id"
         }
     }
@@ -222,4 +222,3 @@ layers.update(config.layers)
 
 database_info.update(config.additional_database_info)
 db_construction = construct_db_dict(entry_types, database_info, basic_general_info, additional_entity_info)
-print(db_construction)
