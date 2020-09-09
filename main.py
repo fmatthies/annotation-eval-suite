@@ -412,10 +412,14 @@ def db_connection() -> sqlite3.Connection:
 
 
 @st.cache()
-def create_temporary_db(db_file_io) -> None:
+def create_temporary_db(db_file_io, is_db_file) -> None:
     print("Create temporary db file ...")
     with open("./data_base_tmp/tmp.db", 'wb') as tmp:
-        tmp.write(db_file_io.read())
+        if is_db_file:
+            tmp.write(db_file_io.read())
+        else:
+            #  ToDo: transform to sqlite db
+            pass
 
 
 def main():
@@ -436,7 +440,7 @@ def main():
         upload_opt.empty()
         file_up.empty()
         choice_desc.empty()
-        create_temporary_db(fis)
+        create_temporary_db(fis, upload=="db file")
 
         # ----- SIDEBAR ----- #
         st.sidebar.subheader("General")
