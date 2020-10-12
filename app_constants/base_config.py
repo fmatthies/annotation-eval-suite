@@ -3,7 +3,7 @@ import logging
 from typing import Union
 from aenum import Constant
 
-import config
+import webanno_config
 
 
 class DefaultTableNames(Constant):
@@ -59,7 +59,7 @@ def construct_db_dict(e_types: list, db_info: dict, basic_info: dict, entity_inf
     _db = {}
     for entry_type in e_types:
         _entity = True if entry_type == DatabaseCategories.entities else False
-        for entry_name, entry_dict in db_info.get(entry_type).items():
+        for entry_name, entry_dict in db_info.get(entry_type, {}).items():
             try:
                 _type: dict = entry_dict[DatabaseConstructionKeys.type] \
                     if entry_type == DatabaseCategories.entities else None
@@ -70,7 +70,7 @@ def construct_db_dict(e_types: list, db_info: dict, basic_info: dict, entity_inf
                 _foreign_keys: dict = entry_dict[DatabaseConstructionKeys.foreign_keys]
             except KeyError:
                 logging.error("Please check if the keys 'type, 'columns', 'indexed_columns' or 'reference_columns' "
-                              "of the '{e_type} - {e_name}' information in 'config.py' are present "
+                              "of the '{e_type} - {e_name}' information in 'webanno_config.py' are present "
                               "and spelled correctly!"
                               .format(e_type=entry_type, e_name=entry_name)
                               )
@@ -95,22 +95,22 @@ def construct_db_dict(e_types: list, db_info: dict, basic_info: dict, entity_inf
 def check_for_conformity(e_types: list):
     # ToDo: check for conformity between column declarations and indexed/referenced column names
     # ToDo: check for conformity of data types
-    if len(set(e_types).symmetric_difference(config.additional_database_info.keys())) > 0:
+    if len(set(e_types).symmetric_difference(webanno_config.additional_database_info.keys())) > 0:
         logging.error(
-            " Please check if the keys of 'additional_database_info' in 'config.py' are equal to and"
+            " Please check if the keys of 'additional_database_info' in 'webanno_config.py' are equal to and"
             " conform with {conform}!\nexpected: {exp}\nvs.\ngot: {got}".format(
                 conform=", ".join("'{}'".format(e) for e in e_types),
-                exp=set(e_types), got=set(config.additional_database_info.keys()))
+                exp=set(e_types), got=set(webanno_config.additional_database_info.keys()))
         )
         sys.exit(-1)
 
-    if len(set(config.layers.keys()).symmetric_difference(
-            set([k for t in e_types for k in config.additional_database_info.get(t).keys()]))) > 0:
+    if len(set(webanno_config.layers.keys()).symmetric_difference(
+            set([k for t in e_types for k in webanno_config.additional_database_info.get(t).keys()]))) > 0:
         logging.error(
             " Please make sure that each sub key in '{e_types}' of 'additional_database_info'"
             " conforms with a key in 'layers'!\nlayers: {layers}\nvs.\nsub keys: {s_keys}".format(
-                e_types=", ".join(e_types), layers=set(config.layers.keys()),
-                s_keys=set([k for t in e_types for k in config.additional_database_info.get(t).keys()]))
+                e_types=", ".join(e_types), layers=set(webanno_config.layers.keys()),
+                s_keys=set([k for t in e_types for k in webanno_config.additional_database_info.get(t).keys()]))
         )
         sys.exit(-1)
 
@@ -215,10 +215,13 @@ additional_entity_info = {
 
 check_for_conformity(entry_types)
 
-layers = {
-    DefaultTableNames.sentences: "de.tudarmstadt.ukp.dkpro.core.api.segmentation.type.Sentence",
-}
-layers.update(config.layers)
+# layers = {
+#     DefaultTableNames.sentences: "de.tudarmstadt.ukp.dkpro.core.api.segmentation.type.Sentence",
+# }
+# layers.update(webanno_config.layers)
+# database_info.update(webanno_config.additional_database_info)
 
-database_info.update(config.additional_database_info)
+layers = {}
+
+
 db_construction = construct_db_dict(entry_types, database_info, basic_general_info, additional_entity_info)

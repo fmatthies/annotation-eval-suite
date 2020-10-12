@@ -2,6 +2,7 @@ import os
 import sys
 import logging
 import sqlite3
+import pathlib
 from sqlite3 import Error
 from typing import Union, Tuple, List
 from collections.abc import Iterable
@@ -11,7 +12,7 @@ from cassis import Cas, load_typesystem, load_cas_from_xmi
 
 import uima
 from app_constants import database_info, db_construction, layers, DefaultTableNames
-from config import layers as user_layers
+from webanno_config import layers as user_layers
 
 logging.basicConfig(level=logging.WARNING)
 
@@ -288,20 +289,24 @@ def store_xmi_in_db(cas: Cas, annotator: str, annotator_id: str, document: str, 
     return True
 
 
-if __name__ == '__main__':
-    project_file = os.path.abspath("../test/test-resources/test_project.zip" if len(sys.argv) <= 1 else sys.argv[1])
+def store_brat_in_db():
+    pass        
+
+
+def store_xmi():
+    project_file = os.path.abspath("../test/uima-test-resources/test_project.zip" if len(sys.argv) <= 1 else sys.argv[1])
     in_memory = False if len(sys.argv) <= 2 else sys.argv[2].lower() in ["true", "t", "yes", "y"]
-    db_file = os.path.abspath("../test/test-resources/test_project.db" if len(sys.argv) <= 3 else sys.argv[3])
+    db_file = os.path.abspath("../test/uima-test-resources/test_project.db" if len(sys.argv) <= 3 else sys.argv[3])
     reset_db = not (False if len(sys.argv) <= 4 else sys.argv[4].lower() in ["false", "f", "no", "n"])
     ts_string_key = "TypeSystem.xml"
 
     print("""
-    Starting with these options:
-    zip file:       {}
-    db file:        {}
-    db in memory:   {}
-    reset db:       {}
-    """.format(project_file, db_file, in_memory, reset_db))
+        Starting with these options:
+        zip file:       {}
+        db file:        {}
+        db in memory:   {}
+        reset db:       {}
+        """.format(project_file, db_file, in_memory, reset_db))
 
     xmi_dict = uima.get_project_files(project_file, ts_string_key)
     ts_string = xmi_dict.get(ts_string_key).read().decode('utf-8')
@@ -311,7 +316,7 @@ if __name__ == '__main__':
     db_util = DBUtils(in_memory=in_memory, db_file=db_file)
     db_util.create_connection()
     data_saver = DataSaver(db_util, db_construction, reset_db=reset_db)
-    pbar = tqdm.tqdm(total=(len(xmi_dict.get("documents"))*len(xmi_dict.get("annotators"))))
+    pbar = tqdm.tqdm(total=(len(xmi_dict.get("documents")) * len(xmi_dict.get("annotators"))))
 
     annotation_types = list()
     layer_types = list()
@@ -327,3 +332,29 @@ if __name__ == '__main__':
             if updated:
                 pbar.update(1)
     db_util.close_connection()
+
+
+def store_brat():
+    project_file = pathlib.Path("../test/brat-test-resources/test_project" if len(sys.argv) <= 1 else sys.argv[1])
+    in_memory = False if len(sys.argv) <= 2 else sys.argv[2].lower() in ["true", "t", "yes", "y"]
+    db_file = os.path.abspath("../test/brat-test-resources/test_project.db" if len(sys.argv) <= 3 else sys.argv[3])
+    reset_db = not (False if len(sys.argv) <= 4 else sys.argv[4].lower() in ["false", "f", "no", "n"])
+
+    print("""
+        Starting with these options:
+        zip file:       {}
+        db file:        {}
+        db in memory:   {}
+        reset db:       {}
+        """.format(str(project_file), db_file, in_memory, reset_db))
+
+    db_util = DBUtils(in_memory=in_memory, db_file=db_file)
+    db_util.create_connection()
+    data_saver = DataSaver(db_util, db_construction, reset_db=reset_db)
+
+    # for document for anno: data_saver.store_brat_in_db
+
+
+if __name__ == '__main__':
+    # store_xmi()
+    store_brat()

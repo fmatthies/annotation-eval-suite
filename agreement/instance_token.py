@@ -217,7 +217,7 @@ class TokenAgreement:
 
 if __name__ == "__main__":
     # ToDo: implement proper UnitTests!
-    db_conn = sqlite3.connect("../test/test-resources/test_project.db", check_same_thread=False)
+    db_conn = sqlite3.connect("../test/uima-test-resources/test_project.db", check_same_thread=False)
 
     # type_group = ["2", "0", "3", "5"]
     # table_type = "medication_entities"

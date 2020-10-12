@@ -9,7 +9,7 @@ from collections import defaultdict
 from aenum import Constant
 from typing import Dict
 
-import config
+import webanno_config
 import app_constants.constants as const
 
 logging.basicConfig(level=logging.INFO)
@@ -143,7 +143,7 @@ def get_layer_information_from_type_system(type_system: typing.Union[io.BytesIO,
 
 
 if __name__ == "__main__":
-    fi = os.path.abspath("../test/test-resources/test_project.zip")
+    fi = os.path.abspath("../test/uima-test-resources/test_project.zip")
     fi_dict = get_project_files(fi)
-    info = get_layer_information_from_type_system(fi_dict.get("TypeSystem.xml"), config.layers)
+    info = get_layer_information_from_type_system(fi_dict.get("TypeSystem.xml"), webanno_config.layers)
     print(info)
