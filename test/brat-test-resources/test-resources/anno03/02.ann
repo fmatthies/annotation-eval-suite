@@ -1,0 +1,13 @@
+T1	Medication 14 22	document
+T2	Dose 7 13	second
+E1	Dose:T2 Dose-Arg:T1
+T3	Medication 41 51	annotation
+T4	Frequency 33 40	another
+E2	Frequency:T4 Frequency-Arg:T3
+T5	Reason 58 64	marked
+E3	Reason:T5 Reason-Arg:T3
+T6	Anaphora 72 81	reference
+R1	Coreference Subject:T6 Object:T3	
+T7	Medication 126 128	me
+T8	Modus 121 125	also
+E4	Modus:T8 Modus-Arg:T7

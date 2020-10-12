@@ -3,6 +3,8 @@ import sys
 import logging
 import sqlite3
 import pathlib
+from collections import namedtuple, defaultdict
+from functools import partial
 from sqlite3 import Error
 from typing import Union, Tuple, List
 from collections.abc import Iterable
@@ -12,6 +14,8 @@ from cassis import Cas, load_typesystem, load_cas_from_xmi
 
 import uima
 from app_constants import database_info, db_construction, layers, DefaultTableNames
+from bratsubset.annotation import Annotations
+from bratsubset.projectconfig import ProjectConfiguration
 from webanno_config import layers as user_layers
 
 logging.basicConfig(level=logging.WARNING)
@@ -289,8 +293,9 @@ def store_xmi_in_db(cas: Cas, annotator: str, annotator_id: str, document: str, 
     return True
 
 
-def store_brat_in_db():
-    pass        
+def store_brat_in_db(ds: DataSaver, annotator: str, annotator_id: str, document: str, document_id: str):
+    ds.store_into_table(DefaultTableNames.annotators, ignore_duplicates=True, id=annotator_id, annotator=annotator)
+    ds.store_into_table(DefaultTableNames.documents, ignore_duplicates=True, id=document_id, document=document)
 
 
 def store_xmi():
@@ -334,25 +339,102 @@ def store_xmi():
     db_util.close_connection()
 
 
+### from kldtz/bratiaa ###
+AnnFile = namedtuple('AnnFile', ['annotator_id', 'ann_path'])
+
+
+class Document:
+    __slots__ = ['ann_files', 'txt_path', 'doc_id']
+
+    def __init__(self, txt_path, doc_id=None):
+        self.txt_path = txt_path
+        if doc_id:
+            self.doc_id = doc_id
+        else:
+            self.doc_id = txt_path
+        self.ann_files = []
+
+
+def input_generator(root):
+    """
+    Yields Document objects. Assumes that each first-level subdirectory of the
+    annotation project corresponds to one annotator.
+    """
+    root = pathlib.Path(root)
+    annotators = [subdir.parts[-1] for subdir in root.glob('*/') if subdir.is_dir()]
+    assert len(annotators) > 1, 'At least two annotators are necessary to compute agreement!'
+    for rel_path in sorted(collect_redundant_files(root, annotators)):
+        document = Document((root / annotators[0] / rel_path).as_posix()[:-3] + 'txt', doc_id=rel_path)
+        for annotator in annotators:
+            ann_path = root / annotator / rel_path
+            document.ann_files.append(AnnFile(annotator, ann_path))
+        yield document
+
+
+def collect_redundant_files(root, annotators):
+    intersection = None
+    for annotator in annotators:
+        subdir_path = root / annotator
+        relative_paths = {path.relative_to(subdir_path).as_posix() for path in subdir_path.glob('**/*.ann')}
+        if not intersection:
+            intersection = relative_paths
+        else:
+            intersection = intersection.intersection(relative_paths)
+    return intersection
+
+
+def _collect_annotators_and_documents(input_gen):
+    annotators, documents = set(), []
+    for document in input_gen():
+        for ann_file in document.ann_files:
+            annotators.add(ann_file.annotator_id)
+        documents.append(document.doc_id)
+    return list(annotators), documents
+#######################
+
+
 def store_brat():
-    project_file = pathlib.Path("../test/brat-test-resources/test_project" if len(sys.argv) <= 1 else sys.argv[1])
+    project_root = pathlib.Path("../test/brat-test-resources/test-resources" if len(sys.argv) <= 1 else sys.argv[1])
     in_memory = False if len(sys.argv) <= 2 else sys.argv[2].lower() in ["true", "t", "yes", "y"]
     db_file = os.path.abspath("../test/brat-test-resources/test_project.db" if len(sys.argv) <= 3 else sys.argv[3])
     reset_db = not (False if len(sys.argv) <= 4 else sys.argv[4].lower() in ["false", "f", "no", "n"])
 
+    config = ProjectConfiguration(str(project_root))
+    input_gen = partial(input_generator, project_root)
+    annotators, documents = _collect_annotators_and_documents(input_gen)
+
     print("""
         Starting with these options:
-        zip file:       {}
+        project root:   {}
         db file:        {}
         db in memory:   {}
         reset db:       {}
-        """.format(str(project_file), db_file, in_memory, reset_db))
+        """.format(str(project_root), db_file, in_memory, reset_db))
 
     db_util = DBUtils(in_memory=in_memory, db_file=db_file)
     db_util.create_connection()
     data_saver = DataSaver(db_util, db_construction, reset_db=reset_db)
 
-    # for document for anno: data_saver.store_brat_in_db
+    # populate db
+    type_reference = defaultdict(dict)
+    for layer_id, layer in enumerate([("entities", config.get_entity_types()), ("events", config.get_event_types())]):
+        set_layer_id = False
+        data_saver.store_into_table(DefaultTableNames.layers, ignore_duplicates=True,
+                                    id=layer_id, layer=layer[0])
+        for type_id, typee in enumerate(layer[1]):
+            if not set_layer_id:
+                type_reference[typee]["layer-id"] = layer_id
+                set_layer_id = True
+            type_reference[typee]["type-id"] = type_id
+            data_saver.store_into_table(DefaultTableNames.annotation_types,  ignore_duplicates=True,
+                                        id=type_id, type=typee, layer=layer_id)
+    for d_id, doc in enumerate(documents):
+        doc_name = "".join(doc.split(".")[:-1])
+        for a_id, annotator in enumerate(annotators):
+            ann_obj = Annotations(pathlib.Path(project_root / annotator / doc).as_posix(), True)
+            for tb_annotation in ann_obj.get_textbounds():
+                store_brat_in_db(ds=data_saver, annotator=annotator, annotator_id=str(a_id),
+                                 document=doc_name, document_id=str(d_id))
 
 
 if __name__ == '__main__':
