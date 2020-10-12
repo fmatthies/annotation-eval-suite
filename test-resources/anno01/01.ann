@@ -1,6 +1,0 @@
-T1	Medication 32 42	annotation
-T2	Anaphora 58 67	reference
-R1	Coreference Subject:T2 Object:T1	
-T3	Frequency 75 94	previous annotation
-E1	Frequency:T3 Frequency-Arg:T1
-T4	Medication 101 103	me

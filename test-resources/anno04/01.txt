@@ -1,4 +1,0 @@
-This is a test file.
-Here is an annotation.
-And this is a reference to the previous annotation.
-Mark me as well.
