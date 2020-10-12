@@ -393,6 +393,19 @@ def _collect_annotators_and_documents(input_gen):
 #######################
 
 
+def _get_sentences(txt: str, split_on: str = '\n'):
+    Sentence = namedtuple('Sentence', ['sentence_id', 'begin', 'end'])
+    sentences = txt.split(split_on)
+    index = txt.index
+    _len = len
+    running_offset = 0
+    for sid, sentence in enumerate(sentences):
+        sentence_offset = index(sentence, running_offset)
+        sentence_len = _len(sentence)
+        running_offset = sentence_offset + sentence_len
+        yield Sentence(sentence_id=sid, begin=sentence_offset, end=running_offset - 1)
+
+
 def store_brat():
     project_root = pathlib.Path("../test/brat-test-resources/test-resources" if len(sys.argv) <= 1 else sys.argv[1])
     in_memory = False if len(sys.argv) <= 2 else sys.argv[2].lower() in ["true", "t", "yes", "y"]
@@ -430,11 +443,14 @@ def store_brat():
                                         id=type_id, type=typee, layer=layer_id)
     for d_id, doc in enumerate(documents):
         doc_name = "".join(doc.split(".")[:-1])
-        for a_id, annotator in enumerate(annotators):
-            ann_obj = Annotations(pathlib.Path(project_root / annotator / doc).as_posix(), True)
-            for tb_annotation in ann_obj.get_textbounds():
-                store_brat_in_db(ds=data_saver, annotator=annotator, annotator_id=str(a_id),
-                                 document=doc_name, document_id=str(d_id))
+        txt = pathlib.Path(project_root / annotators[0] / f"{doc_name}.txt").read_text(encoding='utf-8')
+        for sentence in _get_sentences(txt=txt):
+            has_annotations = False
+            for a_id, annotator in enumerate(annotators):
+                ann_obj = Annotations(pathlib.Path(project_root / annotator / doc).as_posix(), True)
+                for tb_annotation in ann_obj.get_textbounds():
+                    store_brat_in_db(ds=data_saver, annotator=annotator, annotator_id=str(a_id),
+                                     document=doc_name, document_id=str(d_id))
 
 
 if __name__ == '__main__':

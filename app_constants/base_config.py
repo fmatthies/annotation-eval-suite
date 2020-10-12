@@ -220,7 +220,7 @@ def setup_config(config_str: str, slayer_str: str):
 
     check_for_conformity(entry_types)
 
-    layers.update({DefaultTableNames.sentences: _sentence_layer})
+    layers[DefaultTableNames.sentences] = _sentence_layer
     layers.update(_specific_config.layers)
 
     database_info.update(_specific_config.additional_database_info)
