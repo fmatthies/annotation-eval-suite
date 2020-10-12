@@ -1,0 +1,2 @@
+config_name=webanno_config
+sentence_layer=de.tudarmstadt.ukp.dkpro.core.api.segmentation.type.Sentence
