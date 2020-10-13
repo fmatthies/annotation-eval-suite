@@ -39,13 +39,14 @@ def is_drug_categorie(tid):
 
 @st.cache()
 def drug_type_ids():
-    return [d[0] for d in db_connection().execute(
+    res = [d[0] for d in db_connection().execute(
         """
         SELECT id
         FROM annotation_types
         WHERE type LIKE 'medikament%'
         """
-    )]
+    ) if len(d) >= 1]
+    return res
 
 
 @st.cache()
@@ -106,140 +107,152 @@ def get_color_dict():
         SELECT type FROM annotation_types
         ORDER BY type;
         """
-    )]
+    ) if len(e) >= 1]
     colors = color_palette('colorblind', len(entities)).as_hex()
     return {entity.upper(): color for entity, color in zip(entities, colors)}
 
 
 @st.cache()
 def annotator_names() -> list:
-    return [a[0] for a in db_connection().execute(
+    res = [a[0] for a in db_connection().execute(
         """
         SELECT annotator
         FROM annotators
         ORDER BY annotator;
         """
-    )]
+    ) if len(a) >= 1]
+    return res
 
 
 @st.cache()
 def document_titles() -> list:
-    return [doc[0] for doc in db_connection().execute(
+    res = [doc[0] for doc in db_connection().execute(
         """
         SELECT DISTINCT document
         FROM documents
         ORDER BY document;
         """
-    )]
+    ) if len(doc) >= 1]
+    return res
 
 
 @st.cache()
 def annotation_types() -> list:
-    return [a_type[0] for a_type in db_connection().execute(
+    res = [a_type[0] for a_type in db_connection().execute(
         """
         SELECT id
         FROM annotation_types
         """
-    )]
+    ) if len(a_type) >= 1]
+    return res
 
 
 @st.cache()
 def layer_for_id(lid: str):
-    return [a[0] for a in db_connection().execute(
+    res = [a[0] for a in db_connection().execute(
         """
         SELECT layer
         FROM layers
         WHERE id = '{}';
         """.format(lid)
-    )][0]
+    ) if len(a) >= 1]
+    return res[0] if len(res) >= 1 else None
 
 
 @st.cache()
 def id_for_layer(layer: str):
-    return [a[0] for a in db_connection().execute(
+    res = [a[0] for a in db_connection().execute(
         """
         SELECT id
         FROM layers
         WHERE layer = '{}';
         """.format(layer.lower())
-    )][0]
+    ) if len(a) >= 1]
+    return res[0] if len(res) >= 1 else None
 
 
 @st.cache()
 def annotation_type_for_id(annotation_id: str):
-    return [a[0] for a in db_connection().execute(
+    res = [a[0] for a in db_connection().execute(
         """
         SELECT type
         FROM annotation_types
         WHERE id = '{}';
         """.format(annotation_id)
-    )][0]
+    ) if len(a) >= 1]
+    return res[0] if len(res) >= 1 else None
 
 
 @st.cache()
 def id_for_annotation_type(annotation: str):
-    return [a[0] for a in db_connection().execute(
+    res = [a[0] for a in db_connection().execute(
         """
         SELECT id
         FROM annotation_types
         WHERE type = '{}';
         """.format(annotation.lower())
-    )][0]
+    ) if len(a) >= 1]
+    return res[0] if len(res) >= 1 else None
 
 
 @st.cache()
 def annotator_for_id(annotator_id: str):
-    return [a[0] for a in db_connection().execute(
+    res = [a[0] for a in db_connection().execute(
         """
         SELECT annotator
         FROM annotators
         WHERE id = '{}';
         """.format(annotator_id)
-    )][0]
+    ) if len(a) >= 1]
+    return res[0] if len(res) >= 1 else None
 
 
 @st.cache()
 def id_for_annotator(annotator: str):
-    return [a[0] for a in db_connection().execute(
+    res = [a[0] for a in db_connection().execute(
         """
         SELECT id
         FROM annotators
         WHERE annotator = '{}';
         """.format(annotator)
-    )][0]
+    ) if len(a) >= 1]
+    return res[0] if len(res) >= 1 else None
 
 
 @st.cache()
 def document_for_id(document_id: str):
-    return [a[0] for a in db_connection().execute(
+    res = [a[0] for a in db_connection().execute(
         """
         SELECT document
         FROM documents
         WHERE id = '{}';
         """.format(document_id)
-    )][0]
+    ) if len(a) >= 1]
+    return res[0] if len(res) >= 1 else None
 
 
 @st.cache()
 def id_for_document(document: str):
-    return [a[0] for a in db_connection().execute(
+    res = [a[0] for a in db_connection().execute(
         """
         SELECT id
         FROM documents
         WHERE document = '{}';
         """.format(document)
-    )][0]
+    ) if len(a) >= 1]
+    return res[0] if len(res) >= 1 else None
 
 
 @st.cache()
 def annotation_types_for_layer_id(lid: str):
-    return [a[0] for a in db_connection().execute(
+    res = [a[0] for a in db_connection().execute(
         """
         SELECT type
         FROM annotation_types
         WHERE layer = '{}';
         """.format(lid)
-    )]
+    ) if len(a) >= 1]
+    return res
 
 
 @st.cache()
