@@ -14,6 +14,7 @@ class DefaultTableNames(Constant):
 
 
 class DatabaseCategories(Constant):
+    events = "events"
     entities = "entities"
     relations = "relations"
     base = "base"
@@ -167,7 +168,7 @@ def setup_config(config_str: str, slayer_str: str):
             for entry_name, entry_dict in db_info.get(entry_type, {}).items():
                 try:
                     _type: dict = entry_dict[DatabaseConstructionKeys.type] \
-                        if entry_type == DatabaseCategories.entities else None
+                        if entry_type in [DatabaseCategories.entities, DatabaseCategories.relations] else None
                     _columns: dict = {k: d.get("data_type")
                                       for k, d in entry_dict[DatabaseConstructionKeys.columns].items()} \
                         if entry_type != DatabaseCategories.base else entry_dict[DatabaseConstructionKeys.columns]

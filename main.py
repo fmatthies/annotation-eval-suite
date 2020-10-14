@@ -9,11 +9,12 @@ from spacy import displacy
 from seaborn import color_palette
 from typing import List, OrderedDict, Union
 
-import app_constants.constants as const
+# import app_constants.constants as const
 from agreement import InstanceAgreement, TokenAgreement
 
 
 # ToDo: replace table names with constants?
+from app_constants.base_config import DatabaseCategories, DefaultTableNames, layers
 
 
 def display_sentence_comparison(sel_annotators: list, sent_id: str, doc_id: str,
@@ -33,18 +34,23 @@ def display_sentence_comparison(sel_annotators: list, sent_id: str, doc_id: str,
         )
 
 
-def is_drug_categorie(tid):
-    return tid in drug_type_ids()
+def is_entity_categorie(tid):
+    return tid in entity_type_ids()
 
 
 @st.cache()
-def drug_type_ids():
+def reversed_layers():
+    return {x: y for y, x in layers.items()}
+
+
+@st.cache()
+def entity_type_ids():
     res = [d[0] for d in db_connection().execute(
         """
         SELECT id
         FROM annotation_types
-        WHERE type LIKE 'medikament%'
-        """
+        WHERE layer IS {}
+        """.format(id_for_layer("entities"))
     ) if len(d) >= 1]
     return res
 
@@ -66,12 +72,12 @@ def return_entity_html(sentence, entities, focus_entity, focus_attribute):
         colors.update({vk[0]: vk[1] for vk in get_color_dict().items() if vk[0] == focus_entity})
     else:
         colors.update({vk[0]: vk[1] for vk in get_color_dict().items() if vk[0].lower() in
-                       annotation_types_for_layer_id(id_for_layer(const.LayerTypes.MEDICATION_ENTITY))})
+                       annotation_types_for_layer_id(id_for_layer(DatabaseCategories.entities))})
     if focus_attribute is not None:
         colors.update({vk[0]: vk[1] for vk in get_color_dict().items() if vk[0] == focus_attribute})
     else:
         colors.update({vk[0]: vk[1] for vk in get_color_dict().items() if vk[0].lower() in
-                       annotation_types_for_layer_id(id_for_layer(const.LayerTypes.MEDICATION_ATTRIBUTE))})
+                       annotation_types_for_layer_id(id_for_layer(DatabaseCategories.events))})
     return displacy.render(ex, style="ent", manual=True, minify=True, options={"colors": colors})
 
 
@@ -145,6 +151,18 @@ def annotation_types() -> list:
         """
     ) if len(a_type) >= 1]
     return res
+
+
+@st.cache()
+def layer_for_annotation_type_id(a_id: str):
+    res = [a[0] for a in db_connection().execute(
+        """
+        SELECT layer
+        FROM annotation_types
+        WHERE id = '{}';
+        """.format(a_id)
+    ) if len(a) >= 1]
+    return res[0] if len(res) >= 1 else None
 
 
 @st.cache()
@@ -263,7 +281,7 @@ def sentences_for_document(doc_id: str) -> OrderedDict[str, str]:
         FROM {0}
         WHERE document = '{1}'
         ORDER BY begin;
-        """.format(const.LAYER_TNAME_DICT.get(const.LayerTypes.SENTENCE), doc_id)
+        """.format(DefaultTableNames.sentences, doc_id)
     ))
 
 
@@ -301,8 +319,8 @@ def annotations_for_sentence(anno_id: str, sent_id: str):
         FROM {1}
         WHERE sentence = '{2}' AND annotator = '{3}'
         ORDER BY begin;
-        """.format(const.LAYER_TNAME_DICT.get(const.LayerTypes.MEDICATION_ENTITY),
-                   const.LAYER_TNAME_DICT.get(const.LayerTypes.MEDICATION_ATTRIBUTE),
+        """.format(reversed_layers()["entities"],
+                   reversed_layers()["events"],
                    sent_id, anno_id)):
         annotations[result[0]] = {"begin": result[1], "end": result[2], "type": result[3]}
     return annotations
@@ -335,7 +353,7 @@ def sentences_with_annotations(doc_id: str) -> List[str]:
         SELECT id
         FROM {0}
         WHERE document = '{1}' AND has_annotation = 1;
-        """.format(const.LAYER_TNAME_DICT.get(const.LayerTypes.SENTENCE), doc_id)
+        """.format(DefaultTableNames.sentences, doc_id)
     )]
 
 
@@ -353,7 +371,7 @@ def doc_annotations_for_type(tid: str, doc_id: str, combined_drugs: bool = True)
         for i in range(len(id_types.get("ids"))):
             type_id = id_types.get("types")[i]
             id_id = id_types.get("ids")[i]
-            if combined_drugs and is_drug_categorie(type_id) and is_drug_categorie(tid):
+            if combined_drugs and is_entity_categorie(type_id) and is_entity_categorie(tid):
                 ids.append(id_id)
             elif tid == type_id:
                 ids.append(id_id)
@@ -392,12 +410,12 @@ def instance_agreement(doc_id: str, instance: str, annotators: list,
     instance_id = id_for_annotation_type(instance)
     annotators = [id_for_annotator(a) for a in annotators]
     ia = instance_agreement_obj_for_document(doc_id)
-    table = const.LAYER_TNAME_DICT[const.LayerTypes.MEDICATION_ENTITY] if is_drug_categorie(instance_id) \
-        else const.LAYER_TNAME_DICT[const.LayerTypes.MEDICATION_ATTRIBUTE]
-    if combined_entities and is_drug_categorie(instance_id):
-        instance_id = drug_type_ids()
-    if combined_attributes and not is_drug_categorie(instance_id):
-        instance_id = set(annotation_types()).difference(drug_type_ids())
+    table = reversed_layers()["entities"] if is_entity_categorie(instance_id) \
+        else reversed_layers()["events"]
+    if combined_entities and is_entity_categorie(instance_id):
+        instance_id = entity_type_ids()
+    if combined_attributes and not is_entity_categorie(instance_id):
+        instance_id = set(annotation_types()).difference(entity_type_ids())
     return ia.agreement_fscore(instance_type=instance_id, annotators=annotators, table=table)
 
 
@@ -409,12 +427,12 @@ def token_agreement(doc_id: str, instance: str, annotators: list,
     instance_id = id_for_annotation_type(instance)
     annotators = [id_for_annotator(a) for a in annotators]
     ta = token_agreement_obj_for_document(doc_id)
-    table = const.LAYER_TNAME_DICT[const.LayerTypes.MEDICATION_ENTITY] if is_drug_categorie(instance_id) \
-        else const.LAYER_TNAME_DICT[const.LayerTypes.MEDICATION_ATTRIBUTE]
-    if combined_entities and is_drug_categorie(instance_id):
-        instance_id = drug_type_ids()
-    if combined_attributes and not is_drug_categorie(instance_id):
-        instance_id = set(annotation_types()).difference(drug_type_ids())
+    table = reversed_layers()["entities"] if is_entity_categorie(instance_id) \
+        else reversed_layers()["events"]
+    if combined_entities and is_entity_categorie(instance_id):
+        instance_id = entity_type_ids()
+    if combined_attributes and not is_entity_categorie(instance_id):
+        instance_id = set(annotation_types()).difference(entity_type_ids())
     return ta.agreement_fscore(instance_type=instance_id, annotators=annotators, table=table)
 
 
@@ -478,12 +496,12 @@ def main():
         focus_entity = \
             st.sidebar.selectbox("Select focus entity",
                                  options=[annotation_type_for_id(e).title() for e in annotation_types
-                                          if annotation_type_for_id(e).lower().startswith("medikament")])
+                                          if layer_for_id(layer_for_annotation_type_id(e)).lower() == "entities"])
         fc_entity_color_only = st.sidebar.checkbox("Color only focus entity", False)
         focus_attribute = \
             st.sidebar.selectbox("Select focus attribute",
                                  options=[annotation_type_for_id(e).title() for e in annotation_types
-                                          if not annotation_type_for_id(e).lower().startswith("medikament")])
+                                          if layer_for_id(layer_for_annotation_type_id(e)).lower() == "events"])
         fc_attribute_color_only = st.sidebar.checkbox("Color only focus attribute", False)
 
         # --> Agreement Properties

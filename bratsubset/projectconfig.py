@@ -606,8 +606,9 @@ def get_config_path(directory):
 def __read_first_in_directory_tree(directory, filename):
     # config will not be available command-line invocations;
     # in these cases search whole tree
-    BASE_DIR = "/"
     from os.path import split, join
+    from pathlib import Path, PosixPath
+    BASE_DIR = "/" if isinstance(Path(directory), PosixPath) else "\\"
 
     source, result = None, None
 

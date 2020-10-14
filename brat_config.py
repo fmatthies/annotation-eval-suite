@@ -36,6 +36,7 @@ additional_database_info = {
     },
     "relations": {  # <- contains relation annotations between entities
         "medication_relations": {  # <- key has to conform to a "layers" key
+            "type": "relations",
             "additional_columns": {
                 "entity": {
                     "data_type": "text"
