@@ -476,7 +476,6 @@ def main():
         st.sidebar.subheader("General")
         # --> Document Selection
         doc_name = st.sidebar.selectbox("Select document", document_titles())
-        show_complete = st.sidebar.checkbox("Show complete document", False)
         doc_id = id_for_document(doc_name)
 
         # --> Annotation Selection
@@ -517,10 +516,8 @@ def main():
 
         # ----- DOCUMENT AGREEMENT VISUALIZATION ----- #
         st.header("Document")
-        if show_complete:
-            st.write([s for s in sentences_for_document(doc_id).values()])
-        else:
-            st.info("Select 'Show complete document' in the sidebar")
+        with st.beta_expander("Complete Document Text"):
+            st.text("\n".join([f"{_id}: {s}" for _id, s in sentences_for_document(doc_id).items()]))
 
         # # ----- Visualize Agreement Scores ----- #
         vis_anno = "all" if not use_only_selected_annotators else ", ".join(sel_annotators)
