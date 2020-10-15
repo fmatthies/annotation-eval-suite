@@ -99,7 +99,7 @@ class InstanceAgreement:
         denominator = (2 * tp) + fn + fp
         if len(annotators) == 0 or denominator == 0:
             return 0.0
-        res = 2 * tp / denominator / len(annotators)
+        res = 2 * tp / denominator
         return round(res, rounded) if rounded is not None else res
 
 
@@ -211,28 +211,28 @@ class TokenAgreement:
         denominator = (2 * tp) + fn_fp
         if len(annotators) == 0 or denominator == 0:
             return 0.0
-        res = 2 * tp / denominator / len(annotators)
+        res = 2 * tp / denominator
         return round(res, rounded) if rounded is not None else res
 
 
 if __name__ == "__main__":
     # ToDo: implement proper UnitTests!
-    db_conn = sqlite3.connect("../test/uima-test-resources/test_project.db", check_same_thread=False)
+    db_conn = sqlite3.connect("../test/brat-test-resources/test_project.db", check_same_thread=False)
 
-    # type_group = ["2", "0", "3", "5"]
-    # table_type = "medication_entities"
-    type_group = ["1", "4"]
-    table_type = "medication_attributes"
+    type_group = ["0"]
+    table_type = "medication_entities"
+    # type_group = ["6"]
+    # table_type = "medication_attributes"
 
-    ia = InstanceAgreement(annotators=["0", "1", "2"], doc_id="2", db_connection=db_conn)
+    ia = InstanceAgreement(annotators=["0", "1", "2"], doc_id="0", db_connection=db_conn)
 
+    print(ia.agreement_fscore(type_group, ["0", "2", "1"], table_type))
     print(ia.agreement_fscore(type_group, ["0", "1"], table_type))
     print(ia.agreement_fscore(type_group, ["0", "2"], table_type))
     print(ia.agreement_fscore(type_group, ["2", "1"], table_type))
-    print(ia.agreement_fscore(type_group, ["0", "2", "1"], table_type))
 
     print()
-    ta = TokenAgreement(annotators=["0", "1", "2"], doc_id="2", db_connection=db_conn)
+    ta = TokenAgreement(annotators=["0", "1", "2", "3"], doc_id="0", db_connection=db_conn)
 
     print(ta.agreement_fscore(type_group, ["0", "1"], table_type))
     print(ta.agreement_fscore(type_group, ["0", "2"], table_type))

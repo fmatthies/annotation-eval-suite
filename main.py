@@ -9,7 +9,6 @@ from spacy import displacy
 from seaborn import color_palette
 from typing import List, OrderedDict, Union
 
-# import app_constants.constants as const
 from agreement import InstanceAgreement, TokenAgreement
 
 
