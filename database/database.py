@@ -17,7 +17,7 @@ from app_constants import database_info, db_construction, layers, DefaultTableNa
 from app_constants.base_config import DatabaseCategories
 from bratsubset.annotation import Annotations
 from bratsubset.projectconfig import ProjectConfiguration
-from webanno_config import layers as user_layers
+from config.webanno_config_medication import layers as user_layers
 
 logging.basicConfig(level=logging.WARNING)
 
@@ -178,7 +178,7 @@ class DataSaver:
             logging.info("Populating table '{0}' with values from iterable".format(table_name))
             self.db_cursor.executemany(
                 "INSERT{3} INTO {0}({1}) VALUES ({2})".format(
-                    table_name, ",".join(columns), ",".join(["?"]*len(columns)), insert_stm),
+                    table_name, ",".join(columns), ",".join(["?"] * len(columns)), insert_stm),
                 iterable
             )
         else:
@@ -187,7 +187,7 @@ class DataSaver:
             logging.info("Populating columns '{0}' of table '{1}'".format(", ".join(cols), table_name))
             self.db_cursor.execute(
                 "INSERT{3} INTO {0} ({1}) VALUES ({2})".format(
-                    table_name, ",".join(cols), ",".join(["?"]*len(cols)), insert_stm),
+                    table_name, ",".join(cols), ",".join(["?"] * len(cols)), insert_stm),
                 row
             )
 
@@ -294,7 +294,8 @@ def store_xmi_in_db(cas: Cas, annotator: str, annotator_id: str, document: str, 
     return True
 
 
-def store_brat_in_db(ds: DataSaver, annotators: dict, documents: dict, config: ProjectConfiguration, type_reference: dict):
+def store_brat_in_db(ds: DataSaver, annotators: dict, documents: dict, config: ProjectConfiguration,
+                     type_reference: dict, allow_disp_sent: bool = False):
     brat2table = {}
     type2table = {}
     for cat, _dict in database_info.items():
@@ -307,37 +308,45 @@ def store_brat_in_db(ds: DataSaver, annotators: dict, documents: dict, config: P
     annotators_stored = False
     for doc_id, doc_name in documents.items():
         ds.store_into_table(DefaultTableNames.documents, ignore_duplicates=True, id=doc_id, document=doc_name)
-        txt = None
+        txt = []
         ann_objects = dict()
         for a_id, annotator in annotators.items():
             if not annotators_stored:
                 ds.store_into_table(DefaultTableNames.annotators, ignore_duplicates=True, id=a_id, annotator=annotator)
-            if txt is None:
-                txt = pathlib.Path(config.directory, annotator, f"{doc_name}.txt").read_text(encoding='utf-8')
+            txt.append(
+                (a_id, pathlib.Path(config.directory, annotator, f"{doc_name}.txt").read_text(encoding='utf-8'))
+            )
             ann_objects[a_id] = Annotations(pathlib.Path(config.directory, annotator, doc_name).as_posix(), True)
         annotators_stored = True
-        for sentence in _get_sentences(txt=txt):
-            has_annotations = False
-            for a_id, ann_obj in ann_objects.items():
-                for t in ann_obj.get_textbounds():
+        sentences = None
+        for t_aid, _txt in txt:
+            if not allow_disp_sent and sentences is None:
+                sentences = [s for s in _get_sentences(txt=_txt)]
+            elif allow_disp_sent:
+                sentences = _get_sentences(txt=_txt)
+            for sentence in sentences:
+                has_annotations = False
+                for t in ann_objects.get(t_aid).get_textbounds():
                     begin = t.get_start()
                     end = t.get_end()
                     if begin > sentence.end or end < sentence.begin:
                         continue
                     has_annotations = True
                     ds.store_into_table(type2table[t.type.lower()], ignore_duplicates=True,
-                                        id=f"{doc_id}-{a_id}-{t.id}", annotator=str(a_id),
-                                        begin=str(begin-sentence.begin), end=str(end-sentence.begin),
-                                        text=txt[begin:end], sentence=f"{doc_id}-{sentence.id}", document=str(doc_id),
+                                        id=f"{doc_id}-{t_aid}-{t.id}", annotator=str(t_aid),
+                                        begin=str(begin - sentence.begin), end=str(end - sentence.begin),
+                                        text=_txt[begin:end], document=str(doc_id),
+                                        sentence=f"{doc_id}-{sentence.id}{'-' + str(t_aid) if allow_disp_sent else ''}",
                                         type=type_reference[t.type.lower()]["type-id"])
-            ds.store_into_table(DefaultTableNames.sentences, ignore_duplicates=True,
-                                id=f"{doc_id}-{sentence.id}",
-                                begin=sentence.begin, end=sentence.end, document=str(doc_id),
-                                text=txt[sentence.begin:sentence.end], has_annotation=1 if has_annotations else 0)
+                ds.store_into_table(DefaultTableNames.sentences, ignore_duplicates=True,
+                                    id=f"{doc_id}-{sentence.id}{'-' + str(t_aid) if allow_disp_sent else ''}",
+                                    begin=sentence.begin, end=sentence.end, document=str(doc_id),
+                                    text=_txt[sentence.begin:sentence.end], has_annotation=1 if has_annotations else 0)
 
 
 def store_xmi():
-    project_file = os.path.abspath("../test/uima-test-resources/test_project.zip" if len(sys.argv) <= 1 else sys.argv[1])
+    project_file = os.path.abspath(
+        "../test/uima-test-resources/test_project.zip" if len(sys.argv) <= 1 else sys.argv[1])
     in_memory = False if len(sys.argv) <= 2 else sys.argv[2].lower() in ["true", "t", "yes", "y"]
     db_file = os.path.abspath("../test/uima-test-resources/test_project.db" if len(sys.argv) <= 3 else sys.argv[3])
     reset_db = not (False if len(sys.argv) <= 4 else sys.argv[4].lower() in ["false", "f", "no", "n"])
@@ -428,6 +437,8 @@ def _collect_annotators_and_documents(input_gen):
             annotators.add(ann_file.annotator_id)
         documents.append(document.doc_id)
     return list(annotators), documents
+
+
 #######################
 
 
@@ -447,10 +458,13 @@ def _get_sentences(txt: str, split_on: str = '\n'):
 
 
 def store_brat():
-    project_root = pathlib.Path("../test/brat-test-resources/test-resources" if len(sys.argv) <= 1 else sys.argv[1]).resolve()
+    project_root = pathlib.Path(
+        "../test/brat-test-resources/test-resources" if len(sys.argv) <= 1 else sys.argv[1]).resolve()
     in_memory = False if len(sys.argv) <= 2 else sys.argv[2].lower() in ["true", "t", "yes", "y"]
     db_file = os.path.abspath("../test/brat-test-resources/test_project.db" if len(sys.argv) <= 3 else sys.argv[3])
     reset_db = not (False if len(sys.argv) <= 4 else sys.argv[4].lower() in ["false", "f", "no", "n"])
+
+    allow_disp_sent = False  # ToDo: be aware of this!!!
 
     config = ProjectConfiguration(str(project_root))
     input_gen = partial(input_generator, project_root)
@@ -478,12 +492,12 @@ def store_brat():
             typee = typee.lower()
             type_reference[typee]["layer-id"] = layer_id
             type_reference[typee]["type-id"] = type_id
-            data_saver.store_into_table(DefaultTableNames.annotation_types,  ignore_duplicates=True,
+            data_saver.store_into_table(DefaultTableNames.annotation_types, ignore_duplicates=True,
                                         id=type_id, type=typee, layer=layer_id)
             type_id += 1
     store_brat_in_db(ds=data_saver, annotators={_id: _name.lower() for _id, _name in enumerate(annotators)},
                      documents={_id: "".join(_name.split(".")[:-1]) for _id, _name in enumerate(documents)},
-                     config=config, type_reference=type_reference)
+                     config=config, type_reference=type_reference, allow_disp_sent=allow_disp_sent)
 
 
 if __name__ == '__main__':

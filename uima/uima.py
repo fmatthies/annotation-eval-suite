@@ -1,10 +1,28 @@
 from functools import lru_cache
 from typing import Iterable, Tuple, Union
 
+from aenum import Constant
 from cassis import Cas
 from cassis.typesystem import FeatureStructure
 
-import app_constants.constants as const
+
+class LayerTypes(Constant):
+    SENTENCE = "de.tudarmstadt.ukp.dkpro.core.api.segmentation.type.Sentence"
+    MEDICATION_ENTITY = "webanno.custom.MedicationEntity"
+    MEDICATION_ATTRIBUTE = "webanno.custom.MedicationAttribute"
+    RELATION = "webanno.custom.MedicationAttributeRelationTypeLink"
+    ANNOTATOR = "annotator"
+    DOCUMENT = "document"
+    LAYER = "layer"
+    ANNOTATION_TYPE = "annotation"
+
+
+class LayerProperties(Constant):
+    MEDICATION_ENTITY_TYPE = "drugType"
+    MEDICATION_ENTITY_IS_RECOMMENDATION = "isRecommendation"
+    MEDICATION_ENTITY_IS_LIST = "isList"
+    MEDICATION_ATTRIBUTE_TYPE = "attributeType"
+    MEDICATION_ATTRIBUTE_RELATION = "relationType"
 
 
 class WebAnnoLayer:
@@ -74,10 +92,10 @@ class WebAnnoLayer:
 class MedicationEntity(WebAnnoLayer):
     def __init__(self, fs, cas):
         super().__init__(
-            const.LayerTypes.MEDICATION_ENTITY,
-            [(const.LayerProperties.MEDICATION_ENTITY_TYPE, str),
-             (const.LayerProperties.MEDICATION_ENTITY_IS_LIST, bool),
-             (const.LayerProperties.MEDICATION_ENTITY_IS_RECOMMENDATION, bool)],
+            LayerTypes.MEDICATION_ENTITY,
+            [(LayerProperties.MEDICATION_ENTITY_TYPE, str),
+             (LayerProperties.MEDICATION_ENTITY_IS_LIST, bool),
+             (LayerProperties.MEDICATION_ENTITY_IS_RECOMMENDATION, bool)],
             fs,
             cas
         )
@@ -86,16 +104,16 @@ class MedicationEntity(WebAnnoLayer):
 class MedicationAttribute(WebAnnoLayer):
     def __init__(self, fs, cas):
         super().__init__(
-            const.LayerTypes.MEDICATION_ATTRIBUTE,
-            [(const.LayerProperties.MEDICATION_ATTRIBUTE_TYPE, str),
-             (const.LayerProperties.MEDICATION_ATTRIBUTE_RELATION,
-              [LAYER_DICT.get(const.LayerTypes.MEDICATION_ENTITY)])],
+            LayerTypes.MEDICATION_ATTRIBUTE,
+            [(LayerProperties.MEDICATION_ATTRIBUTE_TYPE, str),
+             (LayerProperties.MEDICATION_ATTRIBUTE_RELATION,
+              [LAYER_DICT.get(LayerTypes.MEDICATION_ENTITY)])],
             fs,
             cas
         )
 
 
 LAYER_DICT = {
-    const.LayerTypes.MEDICATION_ENTITY: MedicationEntity,
-    const.LayerTypes.MEDICATION_ATTRIBUTE: MedicationAttribute
+    LayerTypes.MEDICATION_ENTITY: MedicationEntity,
+    LayerTypes.MEDICATION_ATTRIBUTE: MedicationAttribute
 }

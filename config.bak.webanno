@@ -1,2 +1,2 @@
-config_name=webanno_config
+config_name=webanno_config_medication
 sentence_layer=de.tudarmstadt.ukp.dkpro.core.api.segmentation.type.Sentence

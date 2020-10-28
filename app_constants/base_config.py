@@ -138,8 +138,10 @@ db_construction = {}
 
 def setup_config(config_str: str, slayer_str: str):
     _config = config_str
+    if _config.split(".")[-1] == "py":
+        _config = _config[:-3]
     _sentence_layer = slayer_str
-    _specific_config = importlib.import_module(_config)
+    _specific_config = importlib.import_module(f".{_config}", package="config")
 
     def get_foreign_keys(foreign_keys: Union[dict, None] = None):
         foreign_key = ""
@@ -230,5 +232,5 @@ def setup_config(config_str: str, slayer_str: str):
 
 
 if __name__ == '__main__':
-    setup_config(config_str="webanno_config",
+    setup_config(config_str="webanno_config_medication.py",
                  slayer_str="de.tudarmstadt.ukp.dkpro.core.api.segmentation.type.Sentence")

@@ -1,5 +1,4 @@
 import os
-import re
 import zipfile
 import io
 import typing
@@ -9,10 +8,15 @@ from collections import defaultdict
 from aenum import Constant
 from typing import Dict
 
-import webanno_config
-import app_constants.constants as const
+from config import webanno_config_medication
 
 logging.basicConfig(level=logging.INFO)
+
+
+class WebAnnoExport(Constant):
+    TYPE_SYSTEM = "TypeSystem.xml"
+    ZIP_ENDING = ".zip"
+    ROOT = "annotation/"
 
 
 class DeserializeConstants(Constant):
@@ -84,7 +88,7 @@ def get_project_files(zipped_file: str, type_system: str = "TypeSystem.xml")\
     if zipfile.is_zipfile(zipped_file):
         with zipfile.ZipFile(zipped_file, 'r') as zfile:
             for z in zfile.namelist():
-                if z.startswith(const.WebAnnoExport.ROOT) and z.endswith(const.WebAnnoExport.ZIP_ENDING):
+                if z.startswith(WebAnnoExport.ROOT) and z.endswith(WebAnnoExport.ZIP_ENDING):
                     root, doc, zip_name = z.split("/")
                     doc_name = os.path.splitext(doc)[0]
                     if doc_name not in doc_dict.keys():
@@ -145,5 +149,5 @@ def get_layer_information_from_type_system(type_system: typing.Union[io.BytesIO,
 if __name__ == "__main__":
     fi = os.path.abspath("../test/uima-test-resources/test_project.zip")
     fi_dict = get_project_files(fi)
-    info = get_layer_information_from_type_system(fi_dict.get("TypeSystem.xml"), webanno_config.layers)
+    info = get_layer_information_from_type_system(fi_dict.get("TypeSystem.xml"), webanno_config_medication.layers)
     print(info)

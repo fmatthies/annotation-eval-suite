@@ -308,41 +308,45 @@ def annotations_for_sentence(anno_id: str, sent_id: str):
     # if len(anno_id) == 0:
     #     return {}
     annotations = {}
-    for result in db_connection().execute(
-            """
+    cmd_str = ""
+    # ToDo: no hard-coded list -> use a conf entry for annotation entities
+    for _l in ["entities", "events"]:
+        if _l not in reversed_layers().keys():
+            continue
+        cmd_str += """
         SELECT id, begin, end, type
         FROM {0}
-        WHERE sentence = '{2}' AND annotator = '{3}'
+        WHERE sentence = '{1}' AND annotator = '{2}'
         UNION ALL
-        SELECT id, begin, end, type
-        FROM {1}
-        WHERE sentence = '{2}' AND annotator = '{3}'
-        ORDER BY begin;
-        """.format(reversed_layers()["entities"],
-                   reversed_layers()["events"],
-                   sent_id, anno_id)):
+        """.format(reversed_layers()[_l], sent_id, anno_id)
+    cmd_str = cmd_str.rpartition("UNION ALL")[0]
+    cmd_str += "\nORDER BY begin;"
+    for result in db_connection().execute(cmd_str):
         annotations[result[0]] = {"begin": result[1], "end": result[2], "type": result[3]}
     return annotations
 
 
 @st.cache()
 def all_annotations_for_document(doc_id: str):
-    return {row[1]: {"ids": row[0].split(","), "types": row[2].split(",")} for row in db_connection().execute(
-        """
-        SELECT group_concat(id), sentence, group_concat(type) 
-        FROM
-            (SELECT group_concat(id) as id, sentence, group_concat(type) as type
-            FROM medication_entities
-            WHERE document = '{0}'
-            GROUP BY sentence
-            UNION ALL
-            SELECT group_concat(id), sentence, group_concat(type)
-            FROM medication_attributes
-            WHERE document = '{0}'
-            GROUP BY sentence
-            ORDER BY sentence)
+    cmd_str = """
+    SELECT group_concat(id), sentence, group_concat(type) 
+    FROM
+    (SELECT group_concat(id) as id, sentence, group_concat(type) as type
+    """
+    # ToDo: no hard-coded list -> use a conf entry for annotation entities
+    for _l in ["entities", "events"]:
+        if _l not in reversed_layers().keys():
+            continue
+        cmd_str += """
+        FROM {0}
+        WHERE document = '{1}'
         GROUP BY sentence
-        """.format(doc_id))}
+        UNION ALL
+        """.format(reversed_layers()[_l], doc_id)
+    cmd_str = cmd_str.rpartition("UNION ALL")[0]
+    cmd_str += "\nORDER BY sentence)\nGROUP BY sentence"
+    return {row[1]: {"ids": row[0].split(","), "types": row[2].split(",")}
+            for row in db_connection().execute(cmd_str)}
 
 
 @st.cache()
