@@ -2,32 +2,37 @@
 
 import functools
 import collections
+import itertools
 import sqlite3
 import streamlit as st
 import pandas as pd
 from spacy import displacy
 from seaborn import color_palette
-from typing import List, OrderedDict, Union
+from typing import List, OrderedDict, Union, Dict, Set, Tuple
 
 from agreement import InstanceAgreement, TokenAgreement
-
 
 # ToDo: replace table names with constants?
 from app_constants.base_config import DatabaseCategories, DefaultTableNames, layers
 
 
 def display_sentence_comparison(sel_annotators: list, sent_id: str, doc_id: str,
-                                e_focus: Union[None, str], a_focus: Union[None, str]):
-    annotation_dict = annotations_for_sentence_for_anno_list([id_for_annotator(a) for a in sel_annotators], sent_id)
-    for annotator_name in sel_annotators:
+                                e_focus: Union[None, str], a_focus: Union[None, str], disp_sents: list):
+    sent_tuple = (sent_id, set(disp_sents))
+    annotation_dict = annotations_for_sentence_for_anno_list([id_for_annotator(a) for a in sel_annotators], sent_tuple)
+    anno_cols = st.beta_columns(2)
+    for i, annotator_name in enumerate(sel_annotators):
         annotator_id = id_for_annotator(annotator_name)
-        if annotator_id not in annotation_dict.keys():
-            entities_dict = {}
-        else:
-            entities_dict = annotation_dict.get(annotator_id)
-        st.subheader(annotator_name)
-        st.write(
-            return_entity_html(sentence=sentences_for_document(doc_id).get(sent_id),
+        _sent_ann_id = f"{sent_id}-{annotator_id}"
+        if (_sent_ann_id not in disp_sents) and (len(disp_sents[0].split("-")) >= 3):
+            continue
+        _sent_id = _sent_ann_id if (len(disp_sents) > 1 or _sent_ann_id in disp_sents) else sent_id
+        entities_dict = annotation_dict.get(annotator_id, {})
+        sentence = sentences_for_document(doc_id).get(_sent_id)
+        col = i % 2
+        anno_cols[col].subheader(annotator_name)
+        anno_cols[col].write(
+            return_entity_html(sentence=sentence,
                                entities=entities_dict, focus_entity=e_focus, focus_attribute=a_focus),
             unsafe_allow_html=True
         )
@@ -274,6 +279,26 @@ def annotation_types_for_layer_id(lid: str):
 
 @st.cache()
 def sentences_for_document(doc_id: str) -> OrderedDict[str, str]:
+    # ToDo: try to merge sentences that are exactly the same in case of disparate sentences... very low prio
+    # _ordered_dict = collections.OrderedDict()
+    # _iter = itertools.cycle(db_connection().execute(
+    #     """
+    #     SELECT id, text
+    #     FROM {0}
+    #     WHERE document = '{1}'
+    #     ORDER BY begin;
+    #     """.format(DefaultTableNames.sentences, doc_id)
+    # ))
+    # next_iter = next(_iter)
+    # start_id = next_iter[0]
+    # while True:
+    #     (this_id, this_sent), next_iter = next_iter, next(_iter)
+    #     next_id, next_sent = next_iter
+    #     ###
+    #     if len(this_id.split("-")) >= 3 and this_id.split("-")[:-1] == next_id.split("-")[:-1]:
+    #     ###
+    #     if start_id == next_id:
+    #         break
     return collections.OrderedDict((sents[0], sents[1]) for sents in db_connection().execute(
         """
         SELECT id, text
@@ -284,10 +309,15 @@ def sentences_for_document(doc_id: str) -> OrderedDict[str, str]:
     ))
 
 
-def annotations_for_sentence_for_anno_list(anno_ids: List[str], sent_id: str):
+def annotations_for_sentence_for_anno_list(anno_ids: List[str], sent_tuple: Tuple[str, Set[str]]):
     annotations = {}
+    sent_base_id = sent_tuple[0]
     for anno_id in set(anno_ids):
-        annotations[anno_id] = annotations_for_sentence(anno_id, sent_id)
+        _sent_ann_id = f"{sent_base_id}-{anno_id}"
+        if (_sent_ann_id not in sent_tuple[1]) and (len(sent_tuple[0].split("-")) >= 3):
+            continue
+        _sent_id = _sent_ann_id if (len(sent_tuple) > 1 or _sent_ann_id in sent_tuple) else sent_base_id
+        annotations[anno_id] = annotations_for_sentence(anno_id, _sent_id)
     return annotations
 
 
@@ -331,18 +361,18 @@ def all_annotations_for_document(doc_id: str):
     cmd_str = """
     SELECT group_concat(id), sentence, group_concat(type) 
     FROM
-    (SELECT group_concat(id) as id, sentence, group_concat(type) as type
+    (
     """
     # ToDo: no hard-coded list -> use a conf entry for annotation entities
     for _l in ["entities", "events"]:
         if _l not in reversed_layers().keys():
             continue
         cmd_str += """
+        SELECT group_concat(id) as id, sentence, group_concat(type) as type
         FROM {0}
         WHERE document = '{1}'
         GROUP BY sentence
-        UNION ALL
-        """.format(reversed_layers()[_l], doc_id)
+        UNION ALL""".format(reversed_layers()[_l], doc_id)
     cmd_str = cmd_str.rpartition("UNION ALL")[0]
     cmd_str += "\nORDER BY sentence)\nGROUP BY sentence"
     return {row[1]: {"ids": row[0].split(","), "types": row[2].split(",")}
@@ -350,14 +380,17 @@ def all_annotations_for_document(doc_id: str):
 
 
 @st.cache()
-def sentences_with_annotations(doc_id: str) -> List[str]:
-    return [sents[0] for sents in db_connection().execute(
-        """
-        SELECT id
-        FROM {0}
-        WHERE document = '{1}' AND has_annotation = 1;
-        """.format(DefaultTableNames.sentences, doc_id)
-    )]
+def sentences_with_annotations(doc_id: str) -> Dict[str, Set[str]]:
+    _return = collections.defaultdict(set)
+    for sents in db_connection().execute(
+            """
+            SELECT id
+            FROM {0}
+            WHERE document = '{1}' AND has_annotation = 1;
+            """.format(DefaultTableNames.sentences, doc_id)):
+        sent_id_parts = sents[0].split("-")
+        _return["-".join(sent_id_parts[:-1] if len(sent_id_parts) >= 3 else sent_id_parts[:])].add(sents[0])
+    return _return
 
 
 @st.cache()
@@ -474,7 +507,7 @@ def main():
         upload_opt.empty()
         file_up.empty()
         choice_desc.empty()
-        create_temporary_db(fis, upload=="db file")
+        create_temporary_db(fis, upload == "db file")
 
         # ----- SIDEBAR ----- #
         st.sidebar.subheader("General")
@@ -485,8 +518,8 @@ def main():
         # --> Annotation Selection
         sents_with_anno = sentences_with_annotations(doc_id)
         # -----> Caching of "annotations for sentence" and "agreement":
-        _ = [annotations_for_sentence_for_anno_list([id_for_annotator(a) for a in annotator_names()], sid)
-             for sid in sents_with_anno]
+        _ = [annotations_for_sentence_for_anno_list([id_for_annotator(a) for a in annotator_names()], (sid, s_set))
+             for sid, s_set in sents_with_anno.items()]
         _ = instance_agreement_obj_for_document(doc_id)
         _ = token_agreement_obj_for_document(doc_id)
 
@@ -501,17 +534,16 @@ def main():
                                           if layer_for_id(layer_for_annotation_type_id(e)).lower() == "entities"])
         fc_entity_color_only = st.sidebar.checkbox("Color only focus entity", False)
         focus_attribute = \
-            st.sidebar.selectbox("Select focus attribute",
+            st.sidebar.selectbox("Select focus event",
                                  options=[annotation_type_for_id(e).title() for e in annotation_types
                                           if layer_for_id(layer_for_annotation_type_id(e)).lower() == "events"])
-        fc_attribute_color_only = st.sidebar.checkbox("Color only focus attribute", False)
+        fc_attribute_color_only = st.sidebar.checkbox("Color only focus event", False)
 
         # --> Agreement Properties
         st.sidebar.subheader("Agreement Settings")
         combined_entities = st.sidebar.checkbox("All entities are one type", True)
-        combined_attributes = st.sidebar.checkbox("All attributes are one type", False)
+        combined_attributes = st.sidebar.checkbox("All events are one type", False)
         use_only_selected_annotators = st.sidebar.checkbox("Use only selected annotators", True)
-        agr_rounded_to = st.sidebar.slider("Round to", 1, 4, 2)
 
         # --> Annotator Selection
         st.sidebar.subheader("Sentences")
@@ -530,8 +562,8 @@ def main():
         if len(agreement_annotators) <= 1:
             st.info("For agreement calculation more than one annotator must be selected")
         else:
-            entity_index = "(Medikamente)" if combined_entities else " ".join(focus_entity.split()[1:])
-            attribute_index = "(Attribute)" if combined_attributes else focus_attribute
+            entity_index = "(Entities)" if combined_entities else (focus_entity if focus_entity else "---")
+            attribute_index = "(Events)" if combined_attributes else (focus_attribute if focus_attribute else "---")
             ia_drug = instance_agreement(doc_id, focus_entity, agreement_annotators,
                                          combined_entities=combined_entities)
             ta_drug = token_agreement(doc_id, focus_entity, agreement_annotators,
@@ -542,10 +574,13 @@ def main():
                                       combined_attributes=combined_attributes)
             agr_df = pd.DataFrame(data={"instance": [ia_drug, ia_attr], "token": [ta_drug, ta_attr]},
                                   index=[entity_index, attribute_index])
-            st.dataframe(agr_df.style.format("{:." + str(agr_rounded_to) + "f}"))
+
+            _, agr_col_1, _, agr_col_2, _ = st.beta_columns((5, 5, 2, 15, 5))
+            agr_rounded_to = agr_col_1.slider("Round to", 1, 4, 2)
+            agr_col_2.dataframe(agr_df.style.format("{:." + str(agr_rounded_to) + "f}"))
 
         # # ----- Visualize Sentence Comparison ----- #
-        sent_id = sents_with_anno[0] if len(sents_with_anno) >= 1 else None
+        sent_id = list(sents_with_anno.keys())[0] if len(sents_with_anno) >= 1 else None
         # --> Sentence Selection
         if not sent_id:
             st.header("Sentences")
@@ -553,7 +588,8 @@ def main():
             st.info("Sentence comparison not available")
         else:
             sent_no = st.sidebar.slider("Sentence selection", 1, len(sents_with_anno), 1)
-            sent_id = sents_with_anno[sent_no - 1]
+            sent_id = list(sents_with_anno.keys())[sent_no - 1]
+            disp_sent = list(sents_with_anno[sent_id])
             st.header("Sentences (Nr: {})".format(str(sent_id.split("-")[-1])))
 
             e_focus = None
@@ -562,7 +598,8 @@ def main():
                 e_focus = focus_entity
             if fc_attribute_color_only:
                 a_focus = focus_attribute
-            display_sentence_comparison(sel_annotators, sent_id, doc_id, e_focus, a_focus)
+            display_sentence_comparison(sel_annotators, sent_id, doc_id, e_focus, a_focus, disp_sent)
 
 
+st.beta_set_page_config(layout="wide", page_icon="🧰", page_title="Annotation Visualizer")
 main()
