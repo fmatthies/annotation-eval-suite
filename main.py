@@ -1,15 +1,19 @@
 # -*- coding: utf-8 -*-
 
+import pathlib
 import functools
 import collections
 import itertools
 import sqlite3
+import time
+
 import streamlit as st
 import pandas as pd
 from spacy import displacy
 from seaborn import color_palette
 from typing import List, OrderedDict, Union, Dict, Set, Tuple
 
+import SessionState
 from agreement import InstanceAgreement, TokenAgreement
 
 # ToDo: replace table names with constants?
@@ -49,7 +53,7 @@ def reversed_layers():
 
 @st.cache()
 def entity_type_ids():
-    res = [d[0] for d in db_connection().execute(
+    res = [d[0] for d in session.db_connection.execute(
         """
         SELECT id
         FROM annotation_types
@@ -112,7 +116,7 @@ def return_relation_html():
 
 @st.cache()
 def get_color_dict():
-    entities = [e[0] for e in db_connection().execute(
+    entities = [e[0] for e in session.db_connection.execute(
         """
         SELECT type FROM annotation_types
         ORDER BY type;
@@ -124,7 +128,7 @@ def get_color_dict():
 
 @st.cache()
 def annotator_names() -> list:
-    res = [a[0] for a in db_connection().execute(
+    res = [a[0] for a in session.db_connection.execute(
         """
         SELECT annotator
         FROM annotators
@@ -136,7 +140,7 @@ def annotator_names() -> list:
 
 @st.cache()
 def document_titles() -> list:
-    res = [doc[0] for doc in db_connection().execute(
+    res = [doc[0] for doc in session.db_connection.execute(
         """
         SELECT DISTINCT document
         FROM documents
@@ -148,7 +152,7 @@ def document_titles() -> list:
 
 @st.cache()
 def annotation_types() -> list:
-    res = [a_type[0] for a_type in db_connection().execute(
+    res = [a_type[0] for a_type in session.db_connection.execute(
         """
         SELECT id
         FROM annotation_types
@@ -159,7 +163,7 @@ def annotation_types() -> list:
 
 @st.cache()
 def layer_for_annotation_type_id(a_id: str):
-    res = [a[0] for a in db_connection().execute(
+    res = [a[0] for a in session.db_connection.execute(
         """
         SELECT layer
         FROM annotation_types
@@ -171,7 +175,7 @@ def layer_for_annotation_type_id(a_id: str):
 
 @st.cache()
 def layer_for_id(lid: str):
-    res = [a[0] for a in db_connection().execute(
+    res = [a[0] for a in session.db_connection.execute(
         """
         SELECT layer
         FROM layers
@@ -183,7 +187,7 @@ def layer_for_id(lid: str):
 
 @st.cache()
 def id_for_layer(layer: str):
-    res = [a[0] for a in db_connection().execute(
+    res = [a[0] for a in session.db_connection.execute(
         """
         SELECT id
         FROM layers
@@ -195,7 +199,7 @@ def id_for_layer(layer: str):
 
 @st.cache()
 def annotation_type_for_id(annotation_id: str):
-    res = [a[0] for a in db_connection().execute(
+    res = [a[0] for a in session.db_connection.execute(
         """
         SELECT type
         FROM annotation_types
@@ -207,7 +211,7 @@ def annotation_type_for_id(annotation_id: str):
 
 @st.cache()
 def id_for_annotation_type(annotation: str):
-    res = [a[0] for a in db_connection().execute(
+    res = [a[0] for a in session.db_connection.execute(
         """
         SELECT id
         FROM annotation_types
@@ -219,7 +223,7 @@ def id_for_annotation_type(annotation: str):
 
 @st.cache()
 def annotator_for_id(annotator_id: str):
-    res = [a[0] for a in db_connection().execute(
+    res = [a[0] for a in session.db_connection.execute(
         """
         SELECT annotator
         FROM annotators
@@ -231,7 +235,7 @@ def annotator_for_id(annotator_id: str):
 
 @st.cache()
 def id_for_annotator(annotator: str):
-    res = [a[0] for a in db_connection().execute(
+    res = [a[0] for a in session.db_connection.execute(
         """
         SELECT id
         FROM annotators
@@ -243,7 +247,7 @@ def id_for_annotator(annotator: str):
 
 @st.cache()
 def document_for_id(document_id: str):
-    res = [a[0] for a in db_connection().execute(
+    res = [a[0] for a in session.db_connection.execute(
         """
         SELECT document
         FROM documents
@@ -255,7 +259,7 @@ def document_for_id(document_id: str):
 
 @st.cache()
 def id_for_document(document: str):
-    res = [a[0] for a in db_connection().execute(
+    res = [a[0] for a in session.db_connection.execute(
         """
         SELECT id
         FROM documents
@@ -267,7 +271,7 @@ def id_for_document(document: str):
 
 @st.cache()
 def annotation_types_for_layer_id(lid: str):
-    res = [a[0] for a in db_connection().execute(
+    res = [a[0] for a in session.db_connection.execute(
         """
         SELECT type
         FROM annotation_types
@@ -281,7 +285,7 @@ def annotation_types_for_layer_id(lid: str):
 def sentences_for_document(doc_id: str) -> OrderedDict[str, str]:
     # ToDo: try to merge sentences that are exactly the same in case of disparate sentences... very low prio
     # _ordered_dict = collections.OrderedDict()
-    # _iter = itertools.cycle(db_connection().execute(
+    # _iter = itertools.cycle(session.db_connection.execute(
     #     """
     #     SELECT id, text
     #     FROM {0}
@@ -299,7 +303,7 @@ def sentences_for_document(doc_id: str) -> OrderedDict[str, str]:
     #     ###
     #     if start_id == next_id:
     #         break
-    return collections.OrderedDict((sents[0], sents[1]) for sents in db_connection().execute(
+    return collections.OrderedDict((sents[0], sents[1]) for sents in session.db_connection.execute(
         """
         SELECT id, text
         FROM {0}
@@ -341,7 +345,7 @@ def annotations_for_sentence(anno_id: str, sent_id: str):
     cmd_str = ""
     # ToDo: no hard-coded list -> use a conf entry for annotation entities
     for _l in ["entities", "events"]:
-        if _l not in reversed_layers().keys():
+        if _l not in reversed_layers():  # .keys():
             continue
         cmd_str += """
         SELECT id, begin, end, type
@@ -351,7 +355,7 @@ def annotations_for_sentence(anno_id: str, sent_id: str):
         """.format(reversed_layers()[_l], sent_id, anno_id)
     cmd_str = cmd_str.rpartition("UNION ALL")[0]
     cmd_str += "\nORDER BY begin;"
-    for result in db_connection().execute(cmd_str):
+    for result in session.db_connection.execute(cmd_str):
         annotations[result[0]] = {"begin": result[1], "end": result[2], "type": result[3]}
     return annotations
 
@@ -365,7 +369,7 @@ def all_annotations_for_document(doc_id: str):
     """
     # ToDo: no hard-coded list -> use a conf entry for annotation entities
     for _l in ["entities", "events"]:
-        if _l not in reversed_layers().keys():
+        if _l not in reversed_layers():  # .keys():
             continue
         cmd_str += """
         SELECT group_concat(id) as id, sentence, group_concat(type) as type
@@ -376,13 +380,13 @@ def all_annotations_for_document(doc_id: str):
     cmd_str = cmd_str.rpartition("UNION ALL")[0]
     cmd_str += "\nORDER BY sentence)\nGROUP BY sentence"
     return {row[1]: {"ids": row[0].split(","), "types": row[2].split(",")}
-            for row in db_connection().execute(cmd_str)}
+            for row in session.db_connection.execute(cmd_str)}
 
 
 @st.cache()
 def sentences_with_annotations(doc_id: str) -> Dict[str, Set[str]]:
     _return = collections.defaultdict(set)
-    for sents in db_connection().execute(
+    for sents in session.db_connection.execute(
             """
             SELECT id
             FROM {0}
@@ -425,7 +429,7 @@ def instance_agreement_obj_for_document(doc_id: str):
     :return:
     """
     return InstanceAgreement(annotators=[id_for_annotator(a) for a in annotator_names()],
-                             doc_id=doc_id, db_connection=db_connection())
+                             doc_id=doc_id, db_connection=session.db_connection)
 
 
 @st.cache(allow_output_mutation=True)
@@ -435,7 +439,7 @@ def token_agreement_obj_for_document(doc_id: str):
     :return:
     """
     return TokenAgreement(annotators=[id_for_annotator(a) for a in annotator_names()],
-                          doc_id=doc_id, db_connection=db_connection())
+                          doc_id=doc_id, db_connection=session.db_connection)
 
 
 @st.cache()
@@ -472,42 +476,54 @@ def token_agreement(doc_id: str, instance: str, annotators: list,
     return ta.agreement_fscore(instance_type=instance_id, annotators=annotators, table=table)
 
 
-@st.cache(allow_output_mutation=True)
-def db_connection() -> sqlite3.Connection:
-    print("connect ...")
-    return sqlite3.connect("./data_base_tmp/tmp.db", check_same_thread=False)
+# @st.cache(allow_output_mutation=True)
+# def session.db_connection -> sqlite3.Connection:
+#     print("connect ...")
+#     return sqlite3.connect("./data_base_tmp/tmp.db", check_same_thread=False)
 
 
-@st.cache()
-def create_temporary_db(db_file_io, is_db_file) -> None:
-    print("Create temporary db file ...")
-    with open("./data_base_tmp/tmp.db", 'wb') as tmp:
+# @st.cache()
+def create_temporary_db(db_file_io, is_db_file) -> sqlite3.Connection:
+    print(f"Created temporary db file under '{temp_db_file.resolve()}'")
+    if temp_db_file.exists():
+        temp_db_file.open('w').close()
+        time.sleep(1)
+    with temp_db_file.open('wb') as tmp:
         if is_db_file:
             tmp.write(db_file_io.read())
         else:
             #  ToDo: transform to sqlite db
             pass
+    return sqlite3.connect(temp_db_file.resolve(), check_same_thread=False)
 
 
 def main():
     st.title("Annotation Visualizer")
+
     choice_desc = st.empty()
-    choice_desc.info(
-        """
-        ### db file  
-        Choose this if you have already created a database file from a WebAnno project  
-        ### zip file
-        Choose this if you just have an export of a WebAnno project
-        """)
     upload_opt = st.empty()
-    upload = upload_opt.radio("Upload db file or project zip?", ("db file", "zip file"))
     file_up = st.empty()
-    fis = file_up.file_uploader("Upload db file" if upload == "db file" else "Upload zip file")
-    if fis is not None:
+    continue_btn = st.empty()
+    
+    if not session.file_upload and not session.db_connection:
+        choice_desc.info(
+            """
+            ### db file  
+            Choose this if you have already created a database file from a WebAnno project  
+            ### zip file
+            Choose this if you just have an export of a WebAnno project
+            """)
+        session.upload_type = upload_opt.radio("Upload db file or project zip?", ("db file", "zip file"))
+        session.file_upload = file_up.file_uploader("Upload db file" if session.upload_type == "db file"
+                                                    else "Upload zip file")
+        continue_btn.button("Conntinue")
+        if session.file_upload:
+            session.db_connection = create_temporary_db(session.file_upload, session.upload_type == "db file")
+
+    elif session.file_upload and session.db_connection:
+        choice_desc.empty()
         upload_opt.empty()
         file_up.empty()
-        choice_desc.empty()
-        create_temporary_db(fis, upload == "db file")
 
         # ----- SIDEBAR ----- #
         st.sidebar.subheader("General")
@@ -601,5 +617,7 @@ def main():
             display_sentence_comparison(sel_annotators, sent_id, doc_id, e_focus, a_focus, disp_sent)
 
 
+temp_db_file = pathlib.Path("./data_base_tmp/tmp.db")
+session = SessionState.get(db_connection='', file_upload='', upload_type='')
 st.beta_set_page_config(layout="wide", page_icon="🧰", page_title="Annotation Visualizer")
 main()

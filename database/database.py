@@ -464,7 +464,7 @@ def store_brat():
     db_file = os.path.abspath("../test/brat-test-resources/test_project.db" if len(sys.argv) <= 3 else sys.argv[3])
     reset_db = not (False if len(sys.argv) <= 4 else sys.argv[4].lower() in ["false", "f", "no", "n"])
 
-    allow_disp_sent = False  # ToDo: be aware of this!!!
+    allow_disp_sent = True  # ToDo: be aware of this!!!
 
     config = ProjectConfiguration(str(project_root))
     input_gen = partial(input_generator, project_root)
