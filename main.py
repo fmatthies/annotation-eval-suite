@@ -487,7 +487,7 @@ def create_temporary_db(db_file_io, is_db_file) -> sqlite3.Connection:
     print(f"Created temporary db file under '{temp_db_file.resolve()}'")
     if temp_db_file.exists():
         temp_db_file.open('w').close()
-        time.sleep(1)
+        time.sleep(0.5)
     with temp_db_file.open('wb') as tmp:
         if is_db_file:
             tmp.write(db_file_io.read())
