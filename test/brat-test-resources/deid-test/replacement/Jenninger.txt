@@ -9,9 +9,9 @@ Diagnosen:
 Art. Hypertonie bei Belastung. Nikotinabusus. 
 5. Wirbelsäulensyndrom. 
 
-Anamnese: Seit Jahren sind bei ihm Herzrhythmusstör. bek.. Früher wurde dies z. T. mit einem Alkoholabusus u. Diazepam-Abusus in Verbindung gebracht. Seit Jahren ist er jedoch trocken u. hat weniger Beruhigungstbl. eingenommen. Das letzte LZ.-EKG von Ihnen vom 07.18 ergab einen regelr. Sinusrhythm. mit Kammerfreq.-Schw. zw. minim. <AGE> u. max. 149/Min. sowie vereinzelte VES (77) u. keine SVES. Vier Pausen mit einer max. Pausenlänge von 2.15ms infolge einer vorübergehenden AV-Beschwerden werden negiert. Bei Bel. habe er Atemnot, was mit seinem Übergewicht von 19 kg in Verbindung gebracht wird. Keine Beinödeme. Risikofaktoren: Fortbestehender Nikotinabusus von 30 Zigaretten pro Tag. 
+Anamnese: Seit Jahren sind bei ihm Herzrhythmusstör. bek.. Früher wurde dies z. T. mit einem Alkoholabusus u. Diazepam-Abusus in Verbindung gebracht. Seit Jahren ist er jedoch trocken u. hat weniger Beruhigungstbl. eingenommen. Das letzte LZ.-EKG von Ihnen vom 07.18 ergab einen regelr. Sinusrhythm. mit Kammerfreq.-Schw. zw. minim. <AGE_0> u. max. 149/Min. sowie vereinzelte VES (77) u. keine SVES. Vier Pausen mit einer max. Pausenlänge von 2.15ms infolge einer vorübergehenden AV-Beschwerden werden negiert. Bei Bel. habe er Atemnot, was mit seinem Übergewicht von 19 kg in Verbindung gebracht wird. Keine Beinödeme. Risikofaktoren: Fortbestehender Nikotinabusus von 30 Zigaretten pro Tag. 
 
-Körperl. Untersuchungsbefund: <AGE>jähr. Pat., RR in Ruhe re. 140/80, li. 120/80mmHg. Gewicht 91kg. Größe 175cm. Keine kard. Insuff.-zeichen. Herzspitzenstoß nicht tastbar. Normal lauter 1. u. 2. HAT unter Beta-Blocker-Therapie. Keine Extrasystolen. Kein Herzgeräusch. Unauffälliger physikalischer Lungenbefund. Art. Pulse regelrecht. 
+Körperl. Untersuchungsbefund: <AGE_1>jähr. Pat., RR in Ruhe re. 140/80, li. 120/80mmHg. Gewicht 91kg. Größe 175cm. Keine kard. Insuff.-zeichen. Herzspitzenstoß nicht tastbar. Normal lauter 1. u. 2. HAT unter Beta-Blocker-Therapie. Keine Extrasystolen. Kein Herzgeräusch. Unauffälliger physikalischer Lungenbefund. Art. Pulse regelrecht. 
 
 Rö.-Thorax in 2 Eb. Mit Breischluck: Li. betontes Herz mit einem CT-Quot. von 0,42 u. freiem Retrokardialraum. Bds. dichte Hili. Aortensklerose. Lungen u. Sinus o.B.. 
 

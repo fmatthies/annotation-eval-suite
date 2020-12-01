@@ -1,6 +1,6 @@
 
 
-Petra Falk, * 5.1959, wohnhaft in <LOC> <LOC>
+Petra Falk, * 5.1959, wohnhaft in <LOC_0> <LOC_1>
 
 Arztbrief
  
@@ -10,7 +10,7 @@ Diagnosen
 
 Melanom Stadium IV
 3/2018 Primärtumor: Skapulär links (TD 3,65 mm, T3aN0M1c;HNr.:9334a/20)
-5/2018 Sentinel node Exstirpation axillär links (<CON>: tumorfrei)
+5/2018 Sentinel node Exstirpation axillär links (<CON_0>: tumorfrei)
 3/20009 Leberfiliae und Lungenfilia (linker Oberlappen)
 Psychose (ED 2019)
 Z. n. Sinusbradykardie 9/19

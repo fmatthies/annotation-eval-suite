@@ -3,12 +3,12 @@ T1	Date 145 151	5.2020
 T2	Date 160 166	6.2020
 T3	Date 539 543	2002
 T4	Date 678 680	4.
-T5	Date 4401 4407	August
-T6	Location 852 857	<LOC>
-T7	Location 4423 4428	<LOC>
+T5	Date 4403 4409	August
+T6	Location 852 859	<LOC_0>
+T7	Location 4425 4432	<LOC_1>
 T8	Name 106 119	Rebekka Vieth
-T9	Name 1607 1613	Rößler
-T10	Name 3853 3861	Dietrich
-T11	Name 3947 3955	Eckstein
-T12	Name 4412 4421	Oldenburg
-T13	Name 6597 6602	Vieth
+T9	Name 1609 1615	Rößler
+T10	Name 3855 3863	Dietrich
+T11	Name 3949 3957	Eckstein
+T12	Name 4414 4423	Oldenburg
+T13	Name 6601 6606	Vieth

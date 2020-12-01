@@ -21,8 +21,8 @@ T19	Date 3619 3625	1.2019
 T20	Date 3634 3640	1.2019
 T21	Date 4049 4055	1.2019
 T22	Date 5523 5529	1.2019
-T23	Date 8307 8314	03.2019
-T24	Location 7570 7575	<LOC>
+T23	Date 8309 8316	03.2019
+T24	Location 7570 7577	<LOC_0>
 T25	Name 89 102	Hella Paulsen
 T26	Name 1022 1029	Paulsen
 T27	Name 1932 1939	Paulsen
@@ -32,6 +32,6 @@ T30	Name 5512 5519	Paulsen
 T31	Name 5999 6004	Horst
 T32	Name 6288 6295	Paulsen
 T33	Name 6491 6498	Paulsen
-T34	Name 8260 8267	Paulsen
-T35	Name 9359 9366	Paulsen
-T36	Name 9856 9868	Fabian Stang
+T34	Name 8262 8269	Paulsen
+T35	Name 9361 9368	Paulsen
+T36	Name 9858 9870	Fabian Stang

@@ -41,13 +41,13 @@ additional_database_info = {
                 "entity": {
                     "data_type": "text"
                 },
-                "attribute": {
+                "event": {
                     "data_type": "text"
                 }
             },
             "relation": {
                 "source": {
-                    "column_name": "attribute",
+                    "column_name": "event",
                     "ref_entity": "medication_attributes"
                 },
                 "target": {

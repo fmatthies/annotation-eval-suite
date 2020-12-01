@@ -574,26 +574,27 @@ def main():
         # # ----- Visualize Agreement Scores ----- #
         vis_anno = "all" if not use_only_selected_annotators else ", ".join(sel_annotators)
         st.header("Agreement ({})".format(vis_anno))
-        agreement_annotators = sel_annotators if use_only_selected_annotators else annotator_names()
-        if len(agreement_annotators) <= 1:
-            st.info("For agreement calculation more than one annotator must be selected")
-        else:
-            entity_index = "(Entities)" if combined_entities else (focus_entity if focus_entity else "---")
-            attribute_index = "(Events)" if combined_attributes else (focus_attribute if focus_attribute else "---")
-            ia_drug = instance_agreement(doc_id, focus_entity, agreement_annotators,
-                                         combined_entities=combined_entities)
-            ta_drug = token_agreement(doc_id, focus_entity, agreement_annotators,
-                                      combined_entities=combined_entities)
-            ia_attr = instance_agreement(doc_id, focus_attribute, agreement_annotators,
-                                         combined_attributes=combined_attributes)
-            ta_attr = token_agreement(doc_id, focus_attribute, agreement_annotators,
-                                      combined_attributes=combined_attributes)
-            agr_df = pd.DataFrame(data={"instance": [ia_drug, ia_attr], "token": [ta_drug, ta_attr]},
-                                  index=[entity_index, attribute_index])
+        with st.beta_expander("Show Agreement", expanded=True):
+            agreement_annotators = sel_annotators if use_only_selected_annotators else annotator_names()
+            if len(agreement_annotators) <= 1:
+                st.info("For agreement calculation more than one annotator must be selected")
+            else:
+                entity_index = "(Entities)" if combined_entities else (focus_entity if focus_entity else "---")
+                attribute_index = "(Events)" if combined_attributes else (focus_attribute if focus_attribute else "---")
+                ia_drug = instance_agreement(doc_id, focus_entity, agreement_annotators,
+                                             combined_entities=combined_entities)
+                ta_drug = token_agreement(doc_id, focus_entity, agreement_annotators,
+                                          combined_entities=combined_entities)
+                ia_attr = instance_agreement(doc_id, focus_attribute, agreement_annotators,
+                                             combined_attributes=combined_attributes)
+                ta_attr = token_agreement(doc_id, focus_attribute, agreement_annotators,
+                                          combined_attributes=combined_attributes)
+                agr_df = pd.DataFrame(data={"instance": [ia_drug, ia_attr], "token": [ta_drug, ta_attr]},
+                                      index=[entity_index, attribute_index])
 
-            _, agr_col_1, _, agr_col_2, _ = st.beta_columns((5, 5, 2, 15, 5))
-            agr_rounded_to = agr_col_1.slider("Round to", 1, 4, 2)
-            agr_col_2.dataframe(agr_df.style.format("{:." + str(agr_rounded_to) + "f}"))
+                _, agr_col_1, _, agr_col_2, _ = st.beta_columns((5, 5, 2, 15, 5))
+                agr_rounded_to = agr_col_1.slider("Round to", 1, 4, 2)
+                agr_col_2.dataframe(agr_df.style.format("{:." + str(agr_rounded_to) + "f}"))
 
         # # ----- Visualize Sentence Comparison ----- #
         sent_id = list(sents_with_anno.keys())[0] if len(sents_with_anno) >= 1 else None

@@ -1,4 +1,4 @@
-Helga Metzger,  08.1982, wohnhaft <LOC>, <LOC> <LOC> 
+Helga Metzger,  08.1982, wohnhaft <LOC_0>, <LOC_1> <LOC_2> 
 
 Werte Frau Kollegin,
 
@@ -33,6 +33,6 @@ Die axiale Teilbelastung mit 20kg sollte für insgesamt 4 Wochen Aufrecht erhalt
 
 Mit freundlichen kollegialen Grüßen,
 
-Dr. Oliver Gellert
+Dr. Olga Gellert
 
 

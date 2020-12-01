@@ -7,7 +7,7 @@ Spindelzelliges Rhabdomyosarkom vom Erwachsenentyp ED 08/24 im linken Os pubis (
 Stadium initial: T2 b, N 1, Ml, Stadium IV
 Stadium aktuell: T2 b, N 1, Ml, Stadium IV
 Aktueller Remissionsstand: ED
-Rezeptorstatus I Phänotyp: kräftige Expression von Vimentin, relativ kräftige Zytokeratin 1/3-Expression, stellenweise kräftige MNF-Koexpression, schwache, teils mäßig starke Koexpression von sm-Aktin. Disseminiert Desmin-Expression. SI 00 wird nur fokal und ganz vereinzelt koexprimiert bei hoher proliferativer Aktivität in der MIB-IRektion (MIB-lndex <CON>/0). Myo Dl pos. Negativ sind h-Caldesmon, EMA,
+Rezeptorstatus I Phänotyp: kräftige Expression von Vimentin, relativ kräftige Zytokeratin 1/3-Expression, stellenweise kräftige MNF-Koexpression, schwache, teils mäßig starke Koexpression von sm-Aktin. Disseminiert Desmin-Expression. SI 00 wird nur fokal und ganz vereinzelt koexprimiert bei hoher proliferativer Aktivität in der MIB-IRektion (MIB-lndex <CON_0>/0). Myo Dl pos. Negativ sind h-Caldesmon, EMA,
 Hormonrezeptoren.
 MRSA-/VRE-Status: ne/negativ
 
@@ -24,7 +24,7 @@ Orthopädische Vorstellung in Belgrad, unter physiotherapeutische Behandlung mit
 Nicht zu unterscheiden zwischen Entzündung oder Tumor, Biopsie des Herdes 
 MR Becken: Ausgedehnte, teils lytisch-destruktive, teils mehrsklerosierte Veränderungen des oberen und unteren Schambeinastes links, bis an die Symphyse reichend 
 
-8.24 Inzisionsbiopsie Os pubis links: Histologie spindelzelliges Rhabdomyosarkom vom Erwachsenen-Typ (Referenzpathologie in <LOC> bestätigt 09.24)
+8.24 Inzisionsbiopsie Os pubis links: Histologie spindelzelliges Rhabdomyosarkom vom Erwachsenen-Typ (Referenzpathologie in <LOC_0> bestätigt 09.24)
 
 09.24 Vorstellung im Sarkom-Tumorboard: neoadjuvante Chemotherapie, ggf. mit Radiotherapie kombinieren, kurzfristige Stagingkontrolle
 
@@ -32,7 +32,7 @@ MR Becken: Ausgedehnte, teils lytisch-destruktive, teils mehrsklerosierte Verän
 
 10.24 Applikation Zoladex 10,8 mg (3-Monats-Depotspritze), Orgalutran 0,25 mg für 7 Tage s.c.
 
-05.2020 1. Zyklus VAIA Woche 1 (Vincristin dl=2 mg abs., Doxorubicin dl ,2 = mg/m 2 Ifosfamid 1,2 = 3000 mg/m2), Lonquex am 10.2024
+10.2024 1. Zyklus VAIA Woche 1 (Vincristin dl=2 mg abs., Doxorubicin dl ,2 = mg/m 2 Ifosfamid 1,2 = 3000 mg/m2), Lonquex am 10.2024
 
 Therapieplan:
  - Neoadjuvante Chemotherapie mit VAIA Woche 1-6
@@ -111,7 +111,7 @@ Procedere:
 1. Wir bitten um regelmäßige Kontrolle (2 x wöchentlich) des Blutbilds und Blutzuckers sowie wöchentlich von Elektrolyt-, Retentionswerten und CRP.
 2. Bei Leukozyten < 1000/ul bzw. Neutropenie < 500/ul bitte KEINE Gabe von Neupogen, da Lonquex am 10.2024 verabreicht wurde.
 3. Bei Hb < 8,0 g/dl Gabe von bestrahlten Erythrozytenkonzentraten. Bei Thrombozyten < 10000/pl oder Blutungszeichen, Gabe von bestrahlten Thrombozytenkonzentraten.
-4. Bei Temperaturen > 38,0 C oder Infektzeichen Beginn einer antibiotischen Therapie. Bei zusätzlich bestehender Leukopenie umgehende stationäre Einweisung in ein örtliches KH und Beginn einer i.v. Antibiose z.B. mit 3 x 4,5g Tazobac. Rückruf unter der Nummer <CON> erbeten.  
+4. Bei Temperaturen > 38,0 C oder Infektzeichen Beginn einer antibiotischen Therapie. Bei zusätzlich bestehender Leukopenie umgehende stationäre Einweisung in ein örtliches KH und Beginn einer i.v. Antibiose z.B. mit 3 x 4,5g Tazobac. Rückruf unter der Nummer <CON_1> erbeten.  
 5. Gabe von Orgalutran s.c. vom 10.2024 bis zum 10.2024.
 6. Fortführung der Zoladex-Gabe alle 3 Monate (zuletzt am 10.2024).
 
@@ -123,7 +123,7 @@ Ganirelix	Orgalutran	0,25 mg	1 um 20:00		Bis inkl. 10.2024
 
 Selbstverständlich können auch bioäquivalente Präparate anderer Hersteller verwendet werden.
 Wiedervorstellung am 10.2024 um 10.30 Uhr und am 10.2024 um 10.30 Uhr auf Station O-11 zur ambulanten Gabe von Vincristin (Woche 2-3 nach dem VAIA-Protokoll).
-Am 10.2024 zur stationären Aufnahme, Re-Staging und Therapiefortführung mit VAIA Woche 4. Dieser Termin wird Ihnen vorab von unserem zentralen Patientenaufnahme und -leitsystem (Tel: <CON>) bestätigt werden.
+Am 10.2024 zur stationären Aufnahme, Re-Staging und Therapiefortführung mit VAIA Woche 4. Dieser Termin wird Ihnen vorab von unserem zentralen Patientenaufnahme und -leitsystem (Tel: <CON_2>) bestätigt werden.
 Mit freundlichen kollegialen Grüßen
  
 Prof. Dr. Lorenz Schlichting	Prof. Dr. Lisa Eisele

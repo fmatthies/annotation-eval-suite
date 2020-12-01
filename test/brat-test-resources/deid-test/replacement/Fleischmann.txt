@@ -6,7 +6,7 @@ Diagnose:
 Emotional instabile Persönlichkeitsstörung, Borderline-Typus (ICD 10: F60.31)
 
 Anamnese:            
-Aktueller Aufnahmeanlass waren aggressive Verhaltensweisen gegenüber der Großmutter, bei der Herr Ahlers seit Geburt lebt. Der Schulbesuch wurde von ihm im Oktober 2027 abgebrochen. Bereits im Alter von <AGE> Jahren war er wegen Verhaltensauffälligkeiten kurzfristig in der <LOC>, danach für kurze Zeit in einer Pflegefamilie. Anschließend erfolgte ein kurzzeitiger Aufenthalt in einem Heim in <LOC>. Im September 27 unternahm er einen Suizidversuch mit Alkohol und Tabletten, der eine Behandlung im <LOC> erforderlich machte. Im Dezember 27 wurde er dann eine Woche lang im ÖHK <LOC> behandelt. Dortige Diagnose: Adoleszentenkrise, v.a. Prodromalstadium einer schizophrenen Psychose.
+Aktueller Aufnahmeanlass waren aggressive Verhaltensweisen gegenüber der Großmutter, bei der Herr Ahlers seit Geburt lebt. Der Schulbesuch wurde von ihm im Oktober 2027 abgebrochen. Bereits im Alter von <AGE_0> Jahren war er wegen Verhaltensauffälligkeiten kurzfristig in der <LOC_0>, danach für kurze Zeit in einer Pflegefamilie. Anschließend erfolgte ein kurzzeitiger Aufenthalt in einem Heim in <LOC_1>. Im September 27 unternahm er einen Suizidversuch mit Alkohol und Tabletten, der eine Behandlung im <LOC_2> erforderlich machte. Im Dezember 27 wurde er dann eine Woche lang im ÖHK <LOC_3> behandelt. Dortige Diagnose: Adoleszentenkrise, v.a. Prodromalstadium einer schizophrenen Psychose.
 
 Die Großmutter gab an, dass es bei ihrem Enkel immer wieder zu hoch aggressiven Verhaltensweisen gekommen sei, im Rahmen derer er Möbel zerschlagen habe.
 
@@ -42,11 +42,11 @@ In therapeutischer Hinsicht erschien es vordringlich, den Patienten von der zur 
 
 Medikamentös wurde mit Taxilan in einer Dosierung von 300 mg täglich behandelt.
 
-Während der stationären Behandlung ist dann insofern eine Besserung eingetreten, als Herr Ahlers schließlich weniger gereizt reagierte und sich insgesamt kooperativer zeigte. Er konnte in die Beschäftigungstherapie integriert werden und nahm im Rahmen der Arbeitstherapie außerdem am Kochtraining teil. Damit wurde versucht, dem Patienten in lebenspraktischen Bereichen zu mehr Selbständigkeit zu verhelfen. Herr Ahlers hat dann selbst den Wunsch geäußert, mit Beginn des neuen Schuljahres seine unterbrochene Schulausbildung fortzusetzen. Von seiner Schule in <LOC> wurde bescheinigt, dass er ab Oktober 28 die Jahrgangsstufe 13 des Technischen Gymnasiums besuchen kann, wenn sein gesundheitlicher Zustand dies zuläßt.
+Während der stationären Behandlung ist dann insofern eine Besserung eingetreten, als Herr Ahlers schließlich weniger gereizt reagierte und sich insgesamt kooperativer zeigte. Er konnte in die Beschäftigungstherapie integriert werden und nahm im Rahmen der Arbeitstherapie außerdem am Kochtraining teil. Damit wurde versucht, dem Patienten in lebenspraktischen Bereichen zu mehr Selbständigkeit zu verhelfen. Herr Ahlers hat dann selbst den Wunsch geäußert, mit Beginn des neuen Schuljahres seine unterbrochene Schulausbildung fortzusetzen. Von seiner Schule in <LOC_4> wurde bescheinigt, dass er ab Oktober 28 die Jahrgangsstufe 13 des Technischen Gymnasiums besuchen kann, wenn sein gesundheitlicher Zustand dies zuläßt.
 
 Aus unserer Sicht ist es außerdem dringend erforderlich, dass Herr Ahlers nach Abschluss der jetzigen stationären Behandlung in absehbarer Zeit nicht mehr bei seiner Großmutter wohnt.
 
-Wir haben daher Kontakt mit dem Kreisjugendamt aufgenommen mit der Frage, ob er von dort aus in eine geeignete Wohngruppe oder in eine eigene Wohnung vermittelt werden kann, in der eine psychosoziale Betreuung gewährleistet ist. Dazu wurde vom Jugendamt am 06.28 mitgeteilt, dass ein betreutes Jugendwohnen wegen mangelnder Selbständigkeit wohl nicht in Betracht komme, allenfalls die Unterbringung in einer geeigneten Wohngruppe. Herr König vom <LOC> wird diesbezüglich mit Herrn Ahlers nochmals Kontakt aufnehmen.
+Wir haben daher Kontakt mit dem Kreisjugendamt aufgenommen mit der Frage, ob er von dort aus in eine geeignete Wohngruppe oder in eine eigene Wohnung vermittelt werden kann, in der eine psychosoziale Betreuung gewährleistet ist. Dazu wurde vom Jugendamt am 06.28 mitgeteilt, dass ein betreutes Jugendwohnen wegen mangelnder Selbständigkeit wohl nicht in Betracht komme, allenfalls die Unterbringung in einer geeigneten Wohngruppe. Herr König vom <LOC_5> wird diesbezüglich mit Herrn Ahlers nochmals Kontakt aufnehmen.
 
 Der Patient wurde mit Ablauf der Unterbringungsfrist am 06.28 wieder in Ihre ambulante Behandlung entlassen.
 
@@ -57,4 +57,4 @@ Mit freundlichen Grüßen
 
 	
 Dr. Ahlers
-Arzt für <LOC> I
+Arzt für <LOC_6> I

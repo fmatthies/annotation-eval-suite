@@ -1,4 +1,4 @@
-<LOC>, Epilepsie-Einheit 
+<LOC_0>, Epilepsie-Einheit 
 ENTLASSUNGSBERICHT vom 10.2028  
 Patientin: Imhof, Brigitta geb. am 08.1967 
 
@@ -26,7 +26,7 @@ BWS in zwei Ebenen am 10.2028 1Keilwirbel BWK 12 sowie Deckplattenimpression BWK
 Letzte Medikation
 Digitoxin Digimerck 0,07 1-O-0 
 Levothvroxin Euthyrox 75 1-0-0, nüchtern 
-Citalopram Cipramil <CON>/2-0 
+Citalopram Cipramil <CON_0>/2-0 
 Metamizol Novaminsulfon 500 1-1-1-1 
 Pantoprazol Pantozol 40 1-0-0, nüchtern 
 Simvastatin Simvahexal 10 0-0-1 

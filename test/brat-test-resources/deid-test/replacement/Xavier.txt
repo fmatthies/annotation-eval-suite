@@ -26,7 +26,7 @@ Diagnosen:
 -Gemcitabine 1000mg/ m2 Tag 1,8,15; Wiederholung Tag 28, 12.2020 bis 01.2022(1000mg/m2), am  01.2022 in reduzierter Dosis von 750mg/m2 wegen Neutropenie
 - Umstellung Chemotherapie auf Gemcitabine/ Capecitabine bei Progress (CEA-Anstieg)
 - Gemzar* (Gemcitabine) 1000mg/qm: Tag 1 und 8, Wiederholung Tag 21, wobei Gemzar wegen der Neutropenie des Patienten mit 750mg/qm begonnen wurde
-- Xeloda (Capecitabine) 1300mg/qm/d = Capecitabine 2500mg p.o.; Tag 1-14, Pause Tag <CON> Zyklen ; 01.22 - 03.22 
+- Xeloda (Capecitabine) 1300mg/qm/d = Capecitabine 2500mg p.o.; Tag 1-14, Pause Tag <CON_0> Zyklen ; 01.22 - 03.22 
 - Umstellung Chemotherapie auf  Mitomycin C/5-FU bei Progress (CEA, CT-Thorax)
 - Mitomycin C 10 mg/qm = 18 mg, Tag 1
 - 5-Fluorouracil 600 mg/qm = 1128 mg Tag 1, 8, 29, 36 	
@@ -58,7 +58,7 @@ Karnofsky-Index:  100 %
 Aktuell:  Beginn Chemotherapie nach dem FOLFOX-Protokoll
 
 Zwischenanamnese: 
-Herr Grabowski berichtet über seit 2 Tagen zunehmende Dyspnoe vor allen <LOC> bei Belastung. Tagsüber fühle er sich häufig müde ohne Leistungsfähigkeit, wie er sie gewohnt ist. Das Gewicht habe bis auf 87 kg zugenommen. Abends treten Beinödeme auf. Gelegentlich, vor allem in den letzten zwei Tagen Husten mit gelblichem Auswurf. 
+Herr Grabowski berichtet über seit 2 Tagen zunehmende Dyspnoe vor allen <LOC_0> bei Belastung. Tagsüber fühle er sich häufig müde ohne Leistungsfähigkeit, wie er sie gewohnt ist. Das Gewicht habe bis auf 87 kg zugenommen. Abends treten Beinödeme auf. Gelegentlich, vor allem in den letzten zwei Tagen Husten mit gelblichem Auswurf. 
 Vor 2 Tagen begann Herr Grabowski mit der Einnahme von Nifedipin in der Dosierung von 3 x 20 mg pro Tag. 
 
 Zusatzuntersuchungen: 

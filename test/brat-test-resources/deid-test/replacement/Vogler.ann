@@ -1,7 +1,7 @@
-T0	Age 961 966	<AGE>
-T1	Contact 2471 2476	<CON>
-T2	Contact 2496 2501	<CON>
-T3	Contact 2522 2527	<CON>
+T0	Age 961 968	<AGE_0>
+T1	Contact 2473 2480	<CON_0>
+T2	Contact 2500 2507	<CON_0>
+T3	Contact 2528 2535	<CON_1>
 T4	Date 123 129	1.1941
 T5	Date 144 144	
 T6	Date 154 161	09.2021
@@ -9,6 +9,6 @@ T7	Date 374 381	09.2021
 T8	Date 678 682	2008
 T9	Date 743 747	2012
 T10	Name 96 110	Ingo Grabowski
-T11	Name 1797 1802	Heger
-T12	Name 2597 2613	Sascha Steinmann
-T13	Name 2618 2635	Josefine Haustein
+T11	Name 1799 1804	Heger
+T12	Name 2605 2621	Sascha Steinmann
+T13	Name 2626 2641	Julius Haustein

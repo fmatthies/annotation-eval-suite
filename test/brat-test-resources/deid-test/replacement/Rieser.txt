@@ -18,7 +18,7 @@ Epikrise und Therapieempfehlung:
 
 Frau Baumgartner wurde uns zum routinemäßigen Stentwechsel bei bekanntem Pankreaskopfcarzinom aufgenommen. Der Wechsel wurde am 06.2023 komplikationslos durchgeführt. Wir bitten die Patientin, bis morgen um 8.00 Uhr nüchtern zu bleiben; Tee darf sie ab heute um 18.00 Uhr zu sich nehmen.
 
-Ihr freundliches Einverständnis voraussetzend, empfehlen wir eine Wiedervorstellung nach entsprechender Terminvereinbarung (unter <CON>) zum erneuten Stentwechsel. Da sich bereits dieses Mal der Stetwechsel als technisch schwierig erwiesen hat, sollte der nächste Wechsel unter stationären Bedingungen erfolgen, da sich dann möglicherweise ein perkutanes Vorgehen vorteilhaft erweisen könnte.
+Ihr freundliches Einverständnis voraussetzend, empfehlen wir eine Wiedervorstellung nach entsprechender Terminvereinbarung (unter <CON_0>) zum erneuten Stentwechsel. Da sich bereits dieses Mal der Stetwechsel als technisch schwierig erwiesen hat, sollte der nächste Wechsel unter stationären Bedingungen erfolgen, da sich dann möglicherweise ein perkutanes Vorgehen vorteilhaft erweisen könnte.
 
 Medikation bei Entlassung:
 wie gehabt

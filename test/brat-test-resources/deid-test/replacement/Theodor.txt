@@ -1,6 +1,6 @@
 Befund - Ambulanz für Melanomnachsorge
 
-Gerd Rössler, * 12.1990, wohnhaft in <LOC>, <LOC>
+Gerd Rössler, * 12.1990, wohnhaft in <LOC_0>, <LOC_1>
 
 
 Diagnosen:
@@ -9,16 +9,16 @@ Enzephalomyelitis disseminata (Erstmanifestation 2017, Erstdiagnose August 2021)
 1. Allgemeine und klinische Anamnese:
 
 Spezielle Anamnese:
-Der Patient leidet seit ca. 2017 an einer zunehmenden Schwäche in den Beinen sowie allgemein verminderter körperlicher Belastbarkeit. Ihm fiel ein zunehmendes Schwanken beim <LOC> auf und er sei häufig ins Stolpern gekommen. Weiterhin seien feinmotorische Abläufe, wie z. B. Schreibmaschineschreiben, zunehmend erschwert gewesen. Seit ca. einem Jahr betrage die Gehstrecke nur noch 1 km, dann müsse der Patient eine Ruhepause einlegen. Zum gleichen Zeitpunkt empfand er subjektiv eine Harnblasenschwäche. Auch die Stimmung habe sich in der letzten Zeit in Richtung Reizbarkeit und Aggressivität verändert. Wegen eines Taubheitsgefühls im linken Unterarm wurde der Patient unter der Verdachtsdiagnose einer Enzephalomyelitis disseminata am 08.2021 im <LOC> aufgenommen. In der dort durchgeführten ausführlichen Diagnostikk konnte die Verdachtsdiagnose bestätigt werden. Nach Abschluss der stationären Therapie und Frühmobilisierung erfolgte die Entlassung am 08.2021, am 08.2021 wurde der Patient zur Anschlussheilbehandlung stationär aufgenommen.
+Der Patient leidet seit ca. 2017 an einer zunehmenden Schwäche in den Beinen sowie allgemein verminderter körperlicher Belastbarkeit. Ihm fiel ein zunehmendes Schwanken beim <LOC_2> auf und er sei häufig ins Stolpern gekommen. Weiterhin seien feinmotorische Abläufe, wie z. B. Schreibmaschineschreiben, zunehmend erschwert gewesen. Seit ca. einem Jahr betrage die Gehstrecke nur noch 1 km, dann müsse der Patient eine Ruhepause einlegen. Zum gleichen Zeitpunkt empfand er subjektiv eine Harnblasenschwäche. Auch die Stimmung habe sich in der letzten Zeit in Richtung Reizbarkeit und Aggressivität verändert. Wegen eines Taubheitsgefühls im linken Unterarm wurde der Patient unter der Verdachtsdiagnose einer Enzephalomyelitis disseminata am 08.2021 im <LOC_3> aufgenommen. In der dort durchgeführten ausführlichen Diagnostikk konnte die Verdachtsdiagnose bestätigt werden. Nach Abschluss der stationären Therapie und Frühmobilisierung erfolgte die Entlassung am 08.2021, am 08.2021 wurde der Patient zur Anschlussheilbehandlung stationär aufgenommen.
 
 Familienanamnese:
-<LOC>.
+<LOC_4>.
 
 Eigenanamnese:
 Fachspezifisch leer.
 
 Vegetative Anamnese:
-<LOC>.
+<LOC_4>.
 
 Allergien: Nicht bekannt.
 
@@ -32,17 +32,17 @@ Keine.
 Der Patient berichtet über eine deutliche Verringerung der Gehstrecke, über eine Verringerung der allgemeinen Belastbarkeit und eine deutliche Störung der Feinmotorik.
 
 3. Gegenwärtige Therapien, Behandelnde Ärzte:
-Herr Rössler wird ambulant von Dr. med. Esser, FA für Neurologie, Südtiroler Platz  20, <LOC> behandelt. Im <LOC> erfolgte eine Stoßtherapie mit Kortison. Eine Interferonbehandlung wurde mit dem Patienten diskutiert, zu jetzigen Zeitpunkt jedoch nicht eingeleitet.
+Herr Rössler wird ambulant von Dr. med. Esser, FA für Neurologie, Südtiroler Platz  20, <LOC_0> behandelt. Im <LOC_5> erfolgte eine Stoßtherapie mit Kortison. Eine Interferonbehandlung wurde mit dem Patienten diskutiert, zu jetzigen Zeitpunkt jedoch nicht eingeleitet.
 
 4. Allgemeine Sozialanamnese: 
 Der Patient lebt mit seiner Lebensgefährtin zur Zeit in einem Altbau, 4. Etage, gewohnt. Mit ihm leben zwei Kinder aus erster Ehe und ein Kind mit der Lebensgefährtin.
 
 5. Arbeits- und Berufsanamnese: 
-Herr Rössler ist gelernter Maschinenbauingenieur und arbeitet derzeit am <LOC>.
+Herr Rössler ist gelernter Maschinenbauingenieur und arbeitet derzeit am <LOC_6>.
 
 6. Aufnahmebefund, Vorbefunde, ergänzende Diagnostik 
 Allgemein-somatischer Aufnahmebefund:
-<AGE>-jähriger Patient in gutem AZ und EZ. Unauffälliger Befund an Haut und Schleimhäuten, Schädel und Hals. Herz, Lunge und Abdomen unauffällig, Extremitäten o. p. B., Fusspulse bds. kräftig.
+<AGE_0>-jähriger Patient in gutem AZ und EZ. Unauffälliger Befund an Haut und Schleimhäuten, Schädel und Hals. Herz, Lunge und Abdomen unauffällig, Extremitäten o. p. B., Fusspulse bds. kräftig.
 
 Neurologischer Befund:
 Kein Meningismus.
@@ -66,7 +66,7 @@ Neropsychologisch/psychisch:
 Wacher, voll orientierter Patient. Kein Anhalt für formale oder inhaltliche Denkstörung, keine Störungen der Mnestik. Stimmung unauffällig, normal moduliert, kein Anhalt für akute Suizidität.
 
 Aktuelle und wesentliche Befunde:
-Aus dem <LOC> wurden folgende Befunde erhoben:
+Aus dem <LOC_5> wurden folgende Befunde erhoben:
 
 VEP vom 08.2021:
 Mit deutlich latenzverzögerten VEP bds. als Hinweis für eine Funktionsstörung des N. opticus bds., wobei eine annehmbare Seitendifferenz auf eine mehr rechtsseitige Störung hinweist.

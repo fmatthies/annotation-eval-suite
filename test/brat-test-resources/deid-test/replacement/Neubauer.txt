@@ -1,6 +1,6 @@
 Sehr geehrter Herr Dr. Hackenberg, 
 
-wir berichten über unseren gemeinsamen Patienten Olga Tim Bitter, * 09.1999, wohnhaft <CON> Gingen, der sich in der Zeit vom 12.2023 bis 12.2023 in der stationärer Behandlung in unserer Klinik befand. 
+wir berichten über unseren gemeinsamen Patienten Olga Tim Bitter, * 09.1999, wohnhaft <CON_0> Gingen, der sich in der Zeit vom 12.2023 bis 12.2023 in der stationärer Behandlung in unserer Klinik befand. 
 
 Diagnosen (ICD 10): 
 Psychische und Verhaltensstörungen durch Opioide und Opiate: Schädlicher Gebrauch (F11.1) 
@@ -10,7 +10,7 @@ sonstige abnorme Gewohnheiten und Störungen der Impulkontrolle
 Aufnahme Modus / aktuelle Anamnese: 
 Patient kommt zur Aufnahme nach Telefonischer Ankündigung durch PIA. Patient in Goldschmidt bei Fr. Wolf Hegemann in PIA. 
 Patient berichtet im Aufnahme Gespräch dass, ihm geht in der letzten Zeit schlecht, könne nicht schlafen, habe versucht mit der Seroquel-Dosis von alleine hoch zu gehen, nahm gestern 2250 mg Seroquel Prolong, verschriebene Dosis sei 50 mg Seroquel Prolong. 
-Er gibt an, seit Ende November keine Drogen mehr zu nehmen, stattdessen rauche er ab und zu Mal Cannabis, beklagt agressive Impulse, innere Unruhe, Opiat Verlangen und wolle von Opiate Substituiert werden. 
+Er gibt an, seit Ende Januar keine Drogen mehr zu nehmen, stattdessen rauche er ab und zu Mal Cannabis, beklagt agressive Impulse, innere Unruhe, Opiat Verlangen und wolle von Opiate Substituiert werden. 
 Patient ist im Haus bekannt, mehrere Aufenthalte auf PSY3, zuvor auf KJPP, zuletzt vom 08.2019 bis 10.2019. 
 
 Suchtmittel Anamnese: 
@@ -21,7 +21,7 @@ Amphetamine und Benzodiazepine nur Selten.
 Nikotin: ca. 12-13 Schachtel / Tag, vor Einweisung 7-8 Packungen / Tag. 
 
 Soziale Anamnese: 
-Patient wohnt bei den Eltern, abgemeldet von Arbeit wegen Entzug und Krankheit, vorher bei Bildungszentrum in <LOC> im Büro, sei ledig, habe keine Partnerin. 
+Patient wohnt bei den Eltern, abgemeldet von Arbeit wegen Entzug und Krankheit, vorher bei Bildungszentrum in <LOC_0> im Büro, sei ledig, habe keine Partnerin. 
 
 Vegetative Anamnese: 
 Ein- und Durchschlafstörungen, Miktion und Defäktion seien normal, normaler Appetit, Krampfanfälle und Delir seien werden verneint. 
@@ -67,5 +67,5 @@ Eine jederzeitige Kontaktaufnahme bei Probleme wurde abgesprochen.
 
 Entlassungsmedikation: keine 
 Mit freundlichen kollegialen Grüßen 
-Dr. med. Curt Artur Schwenke  
+Dr. med. Christin Antje Schwenke  
  

@@ -1,15 +1,15 @@
-T0	Contact 648 653	<CON>
-T1	Contact 709 714	<CON>
-T2	Contact 788 793	<CON>
+T0	Contact 652 659	<CON_0>
+T1	Contact 715 722	<CON_1>
+T2	Contact 798 805	<CON_2>
 T3	Date 58 64	4.1959
-T4	Date 85 92	06-2023
-T5	Date 507 511	2018
-T6	Date 583 589	6.2023
-T7	Date 1393 1400	07.2023
-T8	Location 78 83	<LOC>
-T9	Location 359 364	<LOC>
-T10	Location 721 726	<LOC>
-T11	Location 795 800	<LOC>
+T4	Date 87 94	06-2023
+T5	Date 511 515	2018
+T6	Date 587 593	6.2023
+T7	Date 1407 1414	07.2023
+T8	Location 78 85	<LOC_0>
+T9	Location 361 368	<LOC_1>
+T10	Location 729 736	<LOC_0>
+T11	Location 807 814	<LOC_1>
 T12	Name 42 54	Rolf Peukert
 T13	Name 42 54	Rolf Peukert
-T14	Name 186 193	Peukert
+T14	Name 188 195	Peukert

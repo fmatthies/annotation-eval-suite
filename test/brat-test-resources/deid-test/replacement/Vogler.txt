@@ -17,7 +17,7 @@ Psychischer Befund:
 Wach, voll orientiert, kooperativ. 
 
 Internistischer Befund: 
-<AGE>-jähriger Patient in gutem AZ und adipösem EZ, RR 140/80 mmHg, Herzfrequenz 80/Minute. Cor, Pulmo, Abdomen o.B.
+<AGE_0>-jähriger Patient in gutem AZ und adipösem EZ, RR 140/80 mmHg, Herzfrequenz 80/Minute. Cor, Pulmo, Abdomen o.B.
 
 Labor:
 Siehe Anlage.
@@ -37,12 +37,12 @@ Beurteilung, Therapie und Verlauf:
 Zusammenfassend erlitt Herr Heger. erstmalig eine transitorisch-ischämische Attacke mit vorübergehender Sensibilitätsstörung recht, die sich nach ca. 30 Minuten komplett zurückbildete. Der neurologische Befund war regelrecht, das MRT des Schädels ergab Zeichen der cerebralen Mikroangiopathie bei ausgeprägtem vaskulären Risikoprofil. Höhergr. Stenosen der hirnversorgenden Arterien oder kardiale Emboliequellen ergaben sich diagnostisch nicht. Insofern erfolgte eine medikamentöse Sekundärprophylaxe mit 100 mg ASS und einem Statin. Wir empfehlen eine regelmäßige Kontrolle von Blutdruck und eine optimale Blutzuckereinstellung zur weiteren Sekundärprophylaxe. 
 
 Medikation bei Entlassung:
-ASS 100 mg <CON> 
-Simvastatin 20 mg <CON> 
-Metoprolol 47,5 mg <CON> 
+ASS 100 mg <CON_0> 
+Simvastatin 20 mg <CON_0> 
+Metoprolol 47,5 mg <CON_1> 
 Zoplicon 7,5 mg z.N. 
 
 
 Mit freundlichen kollegialen Grüßen 
 PD Dr. Sascha Steinmann
-Dr. Josefine Haustein 
+Dr. Julius Haustein 

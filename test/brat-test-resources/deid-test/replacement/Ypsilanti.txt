@@ -1,13 +1,13 @@
 Definitiver Arztbrief
 
-Tilmann Peters, * 5.1961, wohnhaft in <LOC> <LOC>
+Tilmann Peters, * 5.1961, wohnhaft in <LOC_0> <LOC_1>
 
 
 11-2027
 Diagnosen
 
 Maligner Pleuraerguß links mit Mediastinalshift- Pleurapunktion am 10.2027
-Z. n. <LOC> und NE eines Melanoms, Level III, TD wahrscheinlich < 1mm/occipital li; NE mit Narbengewebe  6/27
+Z. n. <LOC_2> und NE eines Melanoms, Level III, TD wahrscheinlich < 1mm/occipital li; NE mit Narbengewebe  6/27
 Z.n. Abtragung eines MM in situ Schläfe links 6.2027
 Z.n Nachexzision 7/27
 Pathologische Lymphknoten / hilär links, mediastinal links, linker Herzzwerchfellwinkel

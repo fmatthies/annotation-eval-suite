@@ -1,11 +1,11 @@
-<LOC>, Abt. für Dermatologie 
+<LOC_0>, Abt. für Dermatologie 
 Ambulanz vom 12.2029  
 Patientin: Strack, Gaby geb. am 11.1975 
 
 Sehr geehrte Frau Kollegin Kappel,
 wir berichten über oben genannte Patientin, die sich zuletzt am 01.2030 in unserer Tumorsprechstunde vorstellte.
 Diagnosen:
-1. Zustand nach sekundär knotigem malignen Wulf, Angelina V, maximaler vertikaler Tumordurchmesser 1,8 mm, rechter Oberschenkel, 2/26 (ACC-Stadium lBpf2 N2c M0)
+1. Zustand nach sekundär knotigem malignen Wulf, Andreas V, maximaler vertikaler Tumordurchmesser 1,8 mm, rechter Oberschenkel, 2/26 (ACC-Stadium lBpf2 N2c M0)
 Z.n. In-transit-Metastase am Oberschenkel rechts 12/28
 Z.n. Exzision zweier In-transit-Metastase rechts inguinal, 5/29
 Z.n. kutaner Melanommetastase rechter Oberschenkel, 10/29
