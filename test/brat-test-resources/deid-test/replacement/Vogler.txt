@@ -1,7 +1,7 @@
 
 Sehr geehrte Frau Kollegin, sehr geehrter Herr Kollege, 
 
-wir berichten über unseren Patienten Ingo Grabowski, geboren am 1.1941, der sich vom . bis zum 09.2021 in unserer stationären Behandlung befand. 
+wir berichten über unseren Patienten Willibald Vogler, geboren am 1.1941, der sich vom . bis zum 09.2021 in unserer stationären Behandlung befand. 
 
 Diagnosen: 
 Transitorisch-ischämische Attacke 
@@ -34,7 +34,7 @@ In der T2-Wichtung periventrikuläre Hyperintensitäten als Zeichen der zerebral
 Ultraschall der hirnversorgenden Arterien: Arteriosklerotische Veränderungen i.B.d. Bifurkation, sonst o.B.
 
 Beurteilung, Therapie und Verlauf:  
-Zusammenfassend erlitt Herr Heger. erstmalig eine transitorisch-ischämische Attacke mit vorübergehender Sensibilitätsstörung recht, die sich nach ca. 30 Minuten komplett zurückbildete. Der neurologische Befund war regelrecht, das MRT des Schädels ergab Zeichen der cerebralen Mikroangiopathie bei ausgeprägtem vaskulären Risikoprofil. Höhergr. Stenosen der hirnversorgenden Arterien oder kardiale Emboliequellen ergaben sich diagnostisch nicht. Insofern erfolgte eine medikamentöse Sekundärprophylaxe mit 100 mg ASS und einem Statin. Wir empfehlen eine regelmäßige Kontrolle von Blutdruck und eine optimale Blutzuckereinstellung zur weiteren Sekundärprophylaxe. 
+Zusammenfassend erlitt Herr V. erstmalig eine transitorisch-ischämische Attacke mit vorübergehender Sensibilitätsstörung recht, die sich nach ca. 30 Minuten komplett zurückbildete. Der neurologische Befund war regelrecht, das MRT des Schädels ergab Zeichen der cerebralen Mikroangiopathie bei ausgeprägtem vaskulären Risikoprofil. Höhergr. Stenosen der hirnversorgenden Arterien oder kardiale Emboliequellen ergaben sich diagnostisch nicht. Insofern erfolgte eine medikamentöse Sekundärprophylaxe mit 100 mg ASS und einem Statin. Wir empfehlen eine regelmäßige Kontrolle von Blutdruck und eine optimale Blutzuckereinstellung zur weiteren Sekundärprophylaxe. 
 
 Medikation bei Entlassung:
 ASS 100 mg <CON_0> 
@@ -44,5 +44,5 @@ Zoplicon 7,5 mg z.N.
 
 
 Mit freundlichen kollegialen Grüßen 
-PD Dr. Sascha Steinmann
-Dr. Julius Haustein 
+PD Dr. Ingo Grabowski
+Dr. Heger Sonja 

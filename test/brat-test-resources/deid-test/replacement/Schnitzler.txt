@@ -2,13 +2,13 @@
 
 Befund - Ambulanz für Melanomnachsorge
 
-Igor Dost, * 1.1959, wohnhaft in <LOC_0>
+Klaus Schnitzler, * 1.1959, wohnhaft in <LOC_0>
 
 03-2023
 Anamnese
 
 Patient kommt heute zur Kontrolle und Entscheidung über weiteres  Procedere.
-Herr Dost entscheidet sich für die einjährige Interferontherapie.
+Herr Bausch entscheidet sich für die einjährige Interferontherapie.
 
 Beurteilung
 

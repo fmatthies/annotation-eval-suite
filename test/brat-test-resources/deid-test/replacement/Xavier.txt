@@ -58,8 +58,8 @@ Karnofsky-Index:  100 %
 Aktuell:  Beginn Chemotherapie nach dem FOLFOX-Protokoll
 
 Zwischenanamnese: 
-Herr Grabowski berichtet über seit 2 Tagen zunehmende Dyspnoe vor allen <LOC_0> bei Belastung. Tagsüber fühle er sich häufig müde ohne Leistungsfähigkeit, wie er sie gewohnt ist. Das Gewicht habe bis auf 87 kg zugenommen. Abends treten Beinödeme auf. Gelegentlich, vor allem in den letzten zwei Tagen Husten mit gelblichem Auswurf. 
-Vor 2 Tagen begann Herr Grabowski mit der Einnahme von Nifedipin in der Dosierung von 3 x 20 mg pro Tag. 
+Herr Pascal berichtet über seit 2 Tagen zunehmende Dyspnoe vor allen <LOC_0> bei Belastung. Tagsüber fühle er sich häufig müde ohne Leistungsfähigkeit, wie er sie gewohnt ist. Das Gewicht habe bis auf 87 kg zugenommen. Abends treten Beinödeme auf. Gelegentlich, vor allem in den letzten zwei Tagen Husten mit gelblichem Auswurf. 
+Vor 2 Tagen begann Herr Pascal mit der Einnahme von Nifedipin in der Dosierung von 3 x 20 mg pro Tag. 
 
 Zusatzuntersuchungen: 
 Labor (06.22): Leukozyten 6,2 Tsd/µl; Erythrozyten 4,08 Mio/µl; Hämoglobin 13,1 g/dl; 
@@ -73,7 +73,7 @@ bereits bekannten metastasentypischen Leberläsionen Nachweis zweier neuer Metas
 Leberparenchym. 
 
 Zusammenfassung und Verlauf: 
-Herr Grabowski stellte sich zu Beginn der Kombinations-Chemotherapie aus Oxaliplatin und 5-FU vor. Er 
+Herr Pascal stellte sich zu Beginn der Kombinations-Chemotherapie aus Oxaliplatin und 5-FU vor. Er 
 berichtet über Belastungsdyspnoe in den letzten 2 Tagen. Als Ursache dafür zeigte sich eine absolute 
 Arrhythmie bei Vorhofflimmern und Herzfrequenz um 100-120/min. Während des kurzen stationären 
 Aufenthaltes gelang die Kardioversion mittels Flecainid 100 mg per os unter Monitorkontrolle. Die 

@@ -3,6 +3,7 @@ import sys
 import logging
 import sqlite3
 import pathlib
+import time
 from collections import namedtuple, defaultdict
 from functools import partial
 from sqlite3 import Error
@@ -463,8 +464,7 @@ def store_brat():
     in_memory = False if len(sys.argv) <= 2 else sys.argv[2].lower() in ["true", "t", "yes", "y"]
     db_file = os.path.abspath("../test/brat-test-resources/test_project.db" if len(sys.argv) <= 3 else sys.argv[3])
     reset_db = not (False if len(sys.argv) <= 4 else sys.argv[4].lower() in ["false", "f", "no", "n"])
-
-    allow_disp_sent = True  # ToDo: be aware of this!!!
+    allow_disp_sent = False if len(sys.argv) <= 5 else sys.argv[5].lower() in ["true", "t", "yes", "y"]
 
     config = ProjectConfiguration(str(project_root))
     input_gen = partial(input_generator, project_root)
@@ -472,11 +472,14 @@ def store_brat():
 
     print("""
         Starting with these options:
-        project root:   {}
-        db file:        {}
-        db in memory:   {}
-        reset db:       {}
-        """.format(str(project_root), db_file, in_memory, reset_db))
+        project root:           {}
+        db file:                {}
+        db in memory:           {}
+        reset db:               {}
+        allow disp. sentences:  {}
+        """.format(str(project_root), db_file, in_memory, reset_db, allow_disp_sent))
+
+    time.sleep(2)
 
     db_util = DBUtils(in_memory=in_memory, db_file=db_file)
     db_util.create_connection()

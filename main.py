@@ -23,7 +23,8 @@ from app_constants.base_config import DatabaseCategories, DefaultTableNames, lay
 def display_sentence_comparison(sel_annotators: list, sent_id: str, doc_id: str,
                                 e_focus: Union[None, str], a_focus: Union[None, str], disp_sents: list):
     sent_tuple = (sent_id, set(disp_sents))
-    annotation_dict = annotations_for_sentence_for_anno_list([id_for_annotator(a) for a in sel_annotators], sent_tuple)
+    annotation_dict = annotations_for_sentence_for_anno_list([id_for_annotator(a) for a in sel_annotators], sent_tuple,
+                                                             session.allow_disp_sent)
     anno_cols = st.beta_columns(2)
     for i, annotator_name in enumerate(sel_annotators):
         annotator_id = id_for_annotator(annotator_name)
@@ -313,14 +314,18 @@ def sentences_for_document(doc_id: str) -> OrderedDict[str, str]:
     ))
 
 
-def annotations_for_sentence_for_anno_list(anno_ids: List[str], sent_tuple: Tuple[str, Set[str]]):
+def annotations_for_sentence_for_anno_list(anno_ids: List[str],
+                                           sent_tuple: Tuple[str, Set[str]],
+                                           allow_disp: bool = False):
     annotations = {}
     sent_base_id = sent_tuple[0]
+    _sent_id = sent_base_id
     for anno_id in set(anno_ids):
-        _sent_ann_id = f"{sent_base_id}-{anno_id}"
-        if (_sent_ann_id not in sent_tuple[1]) and (len(sent_tuple[0].split("-")) >= 3):
-            continue
-        _sent_id = _sent_ann_id if (len(sent_tuple) > 1 or _sent_ann_id in sent_tuple) else sent_base_id
+        if allow_disp:
+            _sent_ann_id = f"{sent_base_id}-{anno_id}"
+            if (_sent_ann_id not in sent_tuple[1]) and (len(sent_tuple[0].split("-")) >= 3):
+                continue
+            _sent_id = _sent_ann_id if (len(sent_tuple) > 1 or _sent_ann_id in sent_tuple) else sent_base_id
         annotations[anno_id] = annotations_for_sentence(anno_id, _sent_id)
     return annotations
 
@@ -501,6 +506,7 @@ def main():
     st.title("Annotation Visualizer")
 
     choice_desc = st.empty()
+    allow_disp_sent = st.empty()
     upload_opt = st.empty()
     file_up = st.empty()
     continue_btn = st.empty()
@@ -512,11 +518,15 @@ def main():
             Choose this if you have already created a database file from a WebAnno project  
             ### zip file
             Choose this if you just have an export of a WebAnno project
+            ### Allow disparate sentences
+            (Warning!) Check this only if you compare annotations that have differing sentences (e.g. for de-id replacement).
+            Don't check this if you don't know what this means. Only for visualization purposes.
             """)
         session.upload_type = upload_opt.radio("Upload db file or project zip?", ("db file", "zip file"))
+        session.allow_disp_sent = allow_disp_sent.checkbox("(!Warning!) Allow disparate Sentences")
         session.file_upload = file_up.file_uploader("Upload db file" if session.upload_type == "db file"
                                                     else "Upload zip file")
-        continue_btn.button("Conntinue")
+        continue_btn.button("Continue")
         if session.file_upload:
             session.db_connection = create_temporary_db(session.file_upload, session.upload_type == "db file")
 
@@ -534,7 +544,8 @@ def main():
         # --> Annotation Selection
         sents_with_anno = sentences_with_annotations(doc_id)
         # -----> Caching of "annotations for sentence" and "agreement":
-        _ = [annotations_for_sentence_for_anno_list([id_for_annotator(a) for a in annotator_names()], (sid, s_set))
+        _ = [annotations_for_sentence_for_anno_list([id_for_annotator(a) for a in annotator_names()], (sid, s_set),
+                                                    allow_disp=session.allow_disp_sent)
              for sid, s_set in sents_with_anno.items()]
         _ = instance_agreement_obj_for_document(doc_id)
         _ = token_agreement_obj_for_document(doc_id)
