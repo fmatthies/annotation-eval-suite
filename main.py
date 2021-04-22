@@ -65,6 +65,30 @@ def entity_type_ids():
 
 
 @st.cache()
+def entity_names_in_document(annotation_names):
+    return [annotation_type_for_id(e).title() for e in annotation_names
+            if layer_for_id(layer_for_annotation_type_id(e)).lower() == "entities"]
+
+
+@st.cache()
+def event_names_in_document(annotation_names):
+    return [annotation_type_for_id(e).title() for e in annotation_names
+            if layer_for_id(layer_for_annotation_type_id(e)).lower() == "events"]
+
+
+@st.cache()
+def event_type_ids():
+    res = [d[0] for d in session.db_connection.execute(
+        """
+        SELECT id
+        FROM annotation_types
+        WHERE layer IS {}
+        """.format(id_for_layer("events"))
+    ) if len(d) >= 1]
+    return res
+
+
+@st.cache()
 def return_entity_html(sentence, entities, focus_entity, focus_attribute):
     ex = [{
         "text": sentence,
@@ -450,6 +474,7 @@ def token_agreement_obj_for_document(doc_id: str):
 @st.cache(hash_funcs={sqlite3.Connection: id})
 def instance_agreement(doc_id: str, instance: str, annotators: list,
                        combined_entities: bool = True, combined_attributes: bool = False):
+    # ToDo: combined_ents will never matter if combined_attrs is True
     if instance is None:
         return 0
     instance_id = id_for_annotation_type(instance)
@@ -467,6 +492,7 @@ def instance_agreement(doc_id: str, instance: str, annotators: list,
 @st.cache(hash_funcs={sqlite3.Connection: id})
 def token_agreement(doc_id: str, instance: str, annotators: list,
                     combined_entities: bool = True, combined_attributes: bool = False):
+    # ToDo: combined_ents will never matter if combined_attrs is True
     if instance is None:
         return 0
     instance_id = id_for_annotation_type(instance)
@@ -480,6 +506,10 @@ def token_agreement(doc_id: str, instance: str, annotators: list,
         instance_id = set(annotation_types()).difference(entity_type_ids())
     return ta.agreement_fscore(instance_type=instance_id, annotators=annotators, table=table)
 
+
+def highlight_row(row: pd.Series, foci: list):
+    return ['background-color: grey']*len(row) if row.name.lower() in [f.lower() for f in foci]\
+        else ['background-color: white']*len(row)
 
 # @st.cache(allow_output_mutation=True)
 # def session.db_connection -> sqlite3.Connection:
@@ -510,7 +540,7 @@ def main():
     upload_opt = st.empty()
     file_up = st.empty()
     continue_btn = st.empty()
-    
+
     if not session.file_upload and not session.db_connection:
         choice_desc.info(
             """
@@ -561,20 +591,17 @@ def main():
                                  for _id_type in all_annotations_for_document(doc_id).values()], []
         ))
         focus_entity = \
-            st.sidebar.selectbox("Select focus entity",
-                                 options=[annotation_type_for_id(e).title() for e in annotation_types
-                                          if layer_for_id(layer_for_annotation_type_id(e)).lower() == "entities"])
+            st.sidebar.selectbox("Select focus entity", options=entity_names_in_document(annotation_types))
         fc_entity_color_only = st.sidebar.checkbox("Color only focus entity", False)
         focus_attribute = \
-            st.sidebar.selectbox("Select focus event",
-                                 options=[annotation_type_for_id(e).title() for e in annotation_types
-                                          if layer_for_id(layer_for_annotation_type_id(e)).lower() == "events"])
+            st.sidebar.selectbox("Select focus event", options=event_names_in_document(annotation_types))
         fc_attribute_color_only = st.sidebar.checkbox("Color only focus event", False)
 
         # --> Agreement Properties
         st.sidebar.subheader("Agreement Settings")
-        combined_entities = st.sidebar.checkbox("All entities are one type", True)
-        combined_attributes = st.sidebar.checkbox("All events are one type", False)
+        # combined_entities = st.sidebar.checkbox("All entities are one type", True)
+        # combined_attributes = st.sidebar.checkbox("All events are one type", False)
+        collapse_agreements = st.sidebar.checkbox("Collapse Agreement Scores", False)
         use_only_selected_annotators = st.sidebar.checkbox("Use only selected annotators", True)
 
         # --> Annotator Selection
@@ -595,22 +622,29 @@ def main():
             if len(agreement_annotators) <= 1:
                 st.info("For agreement calculation more than one annotator must be selected")
             else:
-                entity_index = "(Entities)" if combined_entities else (focus_entity if focus_entity else "---")
-                attribute_index = "(Events)" if combined_attributes else (focus_attribute if focus_attribute else "---")
-                ia_drug = instance_agreement(doc_id, focus_entity, agreement_annotators,
-                                             combined_entities=combined_entities)
-                ta_drug = token_agreement(doc_id, focus_entity, agreement_annotators,
-                                          combined_entities=combined_entities)
-                ia_attr = instance_agreement(doc_id, focus_attribute, agreement_annotators,
-                                             combined_attributes=combined_attributes)
-                ta_attr = token_agreement(doc_id, focus_attribute, agreement_annotators,
-                                          combined_attributes=combined_attributes)
-                agr_df = pd.DataFrame(data={"instance": [ia_drug, ia_attr], "token": [ta_drug, ta_attr]},
-                                      index=[entity_index, attribute_index])
+                ia_entity = instance_agreement(doc_id, focus_entity, agreement_annotators)
+                ta_entity = token_agreement(doc_id, focus_entity, agreement_annotators)
+                ia_event = instance_agreement(doc_id, focus_attribute, agreement_annotators,
+                                              combined_entities=False, combined_attributes=True)
+                ta_event = token_agreement(doc_id, focus_attribute, agreement_annotators,
+                                           combined_entities=False, combined_attributes=True)
+                if collapse_agreements:
+                    _index = ["++(Entities)++", "+++(Events)+++"]
+                    _data = {"instance": [ia_entity, ia_event], "token": [ta_entity, ta_event]}
+                else:
+                    _ent_names = entity_names_in_document(annotation_types)
+                    _ev_names = event_names_in_document(annotation_types)
+                    _index = ["--(Entities)--"] + _ent_names + ["---(Events)---"] + _ev_names
+                    _data = {"instance": [ia_entity] + [instance_agreement(doc_id, _foc, agreement_annotators, False, False) for _foc in _ent_names] + [ia_event] + [instance_agreement(doc_id, _foc, agreement_annotators, False, False) for _foc in _ev_names],
+                             "token": [ta_entity] + [token_agreement(doc_id, _foc, agreement_annotators, False, False) for _foc in _ent_names] + [ta_event] + [token_agreement(doc_id, _foc, agreement_annotators, False, False) for _foc in _ev_names]}
+
+                agr_df = pd.DataFrame(data=_data, index=_index)
 
                 _, agr_col_1, _, agr_col_2, _ = st.beta_columns((5, 5, 2, 15, 5))
                 agr_rounded_to = agr_col_1.slider("Round to", 1, 4, 2)
-                agr_col_2.dataframe(agr_df.style.format("{:." + str(agr_rounded_to) + "f}"))
+                agr_col_2.dataframe(agr_df.style.apply(
+                    lambda x: highlight_row(x, [focus_attribute, focus_entity]), axis=1)
+                                    .format("{:." + str(agr_rounded_to) + "f}"))
 
         # # ----- Visualize Sentence Comparison ----- #
         sent_id = list(sents_with_anno.keys())[0] if len(sents_with_anno) >= 1 else None
