@@ -427,7 +427,7 @@ def separate_annotations_by_annotators(annotation_ids: list, annotator_ids: list
     return {anno_id: [anno for anno in annotation_ids if anno.split("-")[0] == anno_id] for anno_id in annotator_ids}
 
 
-@st.cache(allow_output_mutation=True)
+@st.cache(allow_output_mutation=True, hash_funcs={sqlite3.Connection: id})
 def instance_agreement_obj_for_document(doc_id: str):
     """
     :param doc_id:
@@ -437,7 +437,7 @@ def instance_agreement_obj_for_document(doc_id: str):
                              doc_id=doc_id, db_connection=session.db_connection)
 
 
-@st.cache(allow_output_mutation=True)
+@st.cache(allow_output_mutation=True, hash_funcs={sqlite3.Connection: id})
 def token_agreement_obj_for_document(doc_id: str):
     """
     :param doc_id:
@@ -447,7 +447,7 @@ def token_agreement_obj_for_document(doc_id: str):
                           doc_id=doc_id, db_connection=session.db_connection)
 
 
-@st.cache()
+@st.cache(hash_funcs={sqlite3.Connection: id})
 def instance_agreement(doc_id: str, instance: str, annotators: list,
                        combined_entities: bool = True, combined_attributes: bool = False):
     if instance is None:
@@ -464,7 +464,7 @@ def instance_agreement(doc_id: str, instance: str, annotators: list,
     return ia.agreement_fscore(instance_type=instance_id, annotators=annotators, table=table)
 
 
-@st.cache()
+@st.cache(hash_funcs={sqlite3.Connection: id})
 def token_agreement(doc_id: str, instance: str, annotators: list,
                     combined_entities: bool = True, combined_attributes: bool = False):
     if instance is None:
@@ -488,14 +488,14 @@ def token_agreement(doc_id: str, instance: str, annotators: list,
 
 
 # @st.cache()
-def create_temporary_db(db_file_io, is_db_file) -> sqlite3.Connection:
+def create_temporary_db(file_io, is_db_file) -> sqlite3.Connection:
     print(f"Created temporary db file under '{temp_db_file.resolve()}'")
     if temp_db_file.exists():
         temp_db_file.open('w').close()
         time.sleep(0.5)
     with temp_db_file.open('wb') as tmp:
         if is_db_file:
-            tmp.write(db_file_io.read())
+            tmp.write(file_io.read())
         else:
             #  ToDo: transform to sqlite db
             pass
@@ -518,14 +518,19 @@ def main():
             Choose this if you have already created a database file from a WebAnno project  
             ### zip file
             Choose this if you just have an export of a WebAnno project
+            ### project folder
+            Choose this if you just have a Brat project folder 
+            
             ### Allow disparate sentences
             (Warning!) Check this only if you compare annotations that have differing sentences (e.g. for de-id replacement).
             Don't check this if you don't know what this means. Only for visualization purposes.
             """)
-        session.upload_type = upload_opt.radio("Upload db file or project zip?", ("db file", "zip file"))
+        session.upload_type = upload_opt.radio("Upload db file, project zip or project folder?",
+                                               ("db file", "zip file", "project folder"))
         session.allow_disp_sent = allow_disp_sent.checkbox("(!Warning!) Allow disparate Sentences")
         session.file_upload = file_up.file_uploader("Upload db file" if session.upload_type == "db file"
-                                                    else "Upload zip file")
+                                                    else ("Upload zip file" if session.upload_type == "zip file" else
+                                                          "Upload project folder"))
         continue_btn.button("Continue")
         if session.file_upload:
             session.db_connection = create_temporary_db(session.file_upload, session.upload_type == "db file")
@@ -631,5 +636,5 @@ def main():
 
 temp_db_file = pathlib.Path("./data_base_tmp/tmp.db")
 session = SessionState.get(db_connection='', file_upload='', upload_type='')
-st.beta_set_page_config(layout="wide", page_icon="🧰", page_title="Annotation Visualizer")
+st.set_page_config(layout="wide", page_icon="🧰", page_title="Annotation Visualizer")
 main()

@@ -1,0 +1,1 @@
+`name` in `config.ini` needs to be set according to a configuration python file under `config` 
