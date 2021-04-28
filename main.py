@@ -65,15 +65,17 @@ def entity_type_ids():
 
 
 @st.cache()
-def entity_names_in_document(annotation_names):
-    return [annotation_type_for_id(e).title() for e in annotation_names
-            if layer_for_id(layer_for_annotation_type_id(e)).lower() == "entities"]
+def entity_names_in_document(annotation_names, sort=False):
+    _ents = [annotation_type_for_id(e).title() for e in annotation_names
+             if layer_for_id(layer_for_annotation_type_id(e)).lower() == "entities"]
+    return _ents if not sort else sorted(_ents)
 
 
 @st.cache()
-def event_names_in_document(annotation_names):
-    return [annotation_type_for_id(e).title() for e in annotation_names
-            if layer_for_id(layer_for_annotation_type_id(e)).lower() == "events"]
+def event_names_in_document(annotation_names, sort=False):
+    _evts = [annotation_type_for_id(e).title() for e in annotation_names
+             if layer_for_id(layer_for_annotation_type_id(e)).lower() == "events"]
+    return _evts if not sort else sorted(_evts)
 
 
 @st.cache()
@@ -508,8 +510,9 @@ def token_agreement(doc_id: str, instance: str, annotators: list,
 
 
 def highlight_row(row: pd.Series, foci: list):
-    return ['background-color: grey']*len(row) if row.name.lower() in [f.lower() for f in foci]\
-        else ['background-color: white']*len(row)
+    return ['background-color: grey'] * len(row) if row.name.lower() in [f.lower() for f in foci if f is not None] \
+        else ['background-color: white'] * len(row)
+
 
 # @st.cache(allow_output_mutation=True)
 # def session.db_connection -> sqlite3.Connection:
@@ -632,32 +635,42 @@ def main():
                     _index = ["++(Entities)++", "+++(Events)+++"]
                     _data = {"instance": [ia_entity, ia_event], "token": [ta_entity, ta_event]}
                 else:
-                    _ent_names = entity_names_in_document(annotation_types)
-                    _ev_names = event_names_in_document(annotation_types)
+                    _ent_names = entity_names_in_document(annotation_types, sort=True)
+                    _ev_names = event_names_in_document(annotation_types, sort=True)
                     _index = ["--(Entities)--"] + _ent_names + ["---(Events)---"] + _ev_names
-                    _data = {"instance": [ia_entity] + [instance_agreement(doc_id, _foc, agreement_annotators, False, False) for _foc in _ent_names] + [ia_event] + [instance_agreement(doc_id, _foc, agreement_annotators, False, False) for _foc in _ev_names],
-                             "token": [ta_entity] + [token_agreement(doc_id, _foc, agreement_annotators, False, False) for _foc in _ent_names] + [ta_event] + [token_agreement(doc_id, _foc, agreement_annotators, False, False) for _foc in _ev_names]}
+                    _data = {
+                        "instance": [ia_entity] + [instance_agreement(doc_id, _foc, agreement_annotators, False, False)
+                                                   for _foc in _ent_names] + [ia_event] + [
+                                        instance_agreement(doc_id, _foc, agreement_annotators, False, False) for _foc in
+                                        _ev_names],
+                        "token": [ta_entity] + [token_agreement(doc_id, _foc, agreement_annotators, False, False) for
+                                                _foc in _ent_names] + [ta_event] + [
+                                     token_agreement(doc_id, _foc, agreement_annotators, False, False) for _foc in
+                                     _ev_names]}
 
                 agr_df = pd.DataFrame(data=_data, index=_index)
-
                 _, agr_col_1, _, agr_col_2, _ = st.beta_columns((5, 5, 2, 15, 5))
                 agr_rounded_to = agr_col_1.slider("Round to", 1, 4, 2)
                 agr_col_2.dataframe(agr_df.style.apply(
                     lambda x: highlight_row(x, [focus_attribute, focus_entity]), axis=1)
-                                    .format("{:." + str(agr_rounded_to) + "f}"))
+                                    .format("{:." + str(agr_rounded_to) + "f}"),
+                                    height=25 * len(_index) + 25)
 
         # # ----- Visualize Sentence Comparison ----- #
         sent_id = list(sents_with_anno.keys())[0] if len(sents_with_anno) >= 1 else None
         # --> Sentence Selection
         if not sent_id:
-            st.header("Sentences")
+            st.header("Sentences & Annotators")
             st.sidebar.info("No sentences with annotations in this document")
             st.info("Sentence comparison not available")
         else:
-            sent_no = st.sidebar.slider("Sentence selection", 1, len(sents_with_anno), 1)
-            sent_id = list(sents_with_anno.keys())[sent_no - 1]
+            sent_id_prefix = "-".join(sent_id.split("-")[:-1])
+            st.header("Sentences")
+            _, _slider, _ = st.beta_columns((0.25, 4, 10))
+            with _slider:
+                _sent = st.select_slider("", options=[_id.split("-")[-1] for _id in sents_with_anno.keys()])
+            sent_id = "-".join([sent_id_prefix, _sent])
             disp_sent = list(sents_with_anno[sent_id])
-            st.header("Sentences (Nr: {})".format(str(sent_id.split("-")[-1])))
 
             e_focus = None
             a_focus = None
