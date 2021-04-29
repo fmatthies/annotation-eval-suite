@@ -718,3 +718,7 @@ temp_db_file = pathlib.Path("./data_base_tmp/tmp.db")
 session = SessionState.get(db_connection='', file_upload='', upload_type='')
 st.set_page_config(layout="wide", page_icon="🧰", page_title="Annotation Visualizer")
 main()
+
+# ToDo: colors
+# ToDo: document name (for long ones) somewhere
+# ToDo: cache selected focus entity/event when switching documents

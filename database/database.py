@@ -296,15 +296,16 @@ def store_xmi_in_db(cas: Cas, annotator: str, annotator_id: str, document: str, 
 
 
 def store_brat_in_db(ds: DataSaver, annotators: dict, documents: dict, config: ProjectConfiguration,
-                     type_reference: dict, allow_disp_sent: bool = False):
+                     type_reference: dict, allow_disp_sent: bool = False, drop_annotations: list = []):
     brat2table = {}
     type2table = {}
     for cat, _dict in database_info.items():
         cat = cat.lower()
         if cat in [DatabaseCategories.entities.lower(), DatabaseCategories.relations.lower()]:
             brat2table.update({y['type'].lower(): x.lower() for x, y in _dict.items()})
-    for x, y in {'entities': config.get_entity_types(), 'events': config.get_event_types(),
-                 'relations': config.get_relation_types()}.items():
+    for x, y in {'entities': [a for a in config.get_entity_types() if a not in drop_annotations],
+                 'events': [a for a in config.get_event_types() if a not in drop_annotations],
+                 'relations': [a for a in config.get_relation_types() if a not in drop_annotations]}.items():
         type2table.update({z.lower(): brat2table[x] for z in y})
     annotators_stored = False
     for doc_id, doc_name in documents.items():
@@ -328,6 +329,8 @@ def store_brat_in_db(ds: DataSaver, annotators: dict, documents: dict, config: P
             for sentence in sentences:
                 has_annotations = False
                 for t in ann_objects.get(t_aid).get_textbounds():
+                    if t.type.lower() in drop_annotations:
+                        continue
                     begin = t.get_start()
                     end = t.get_end()
                     if begin > sentence.end or end < sentence.begin:
@@ -465,6 +468,7 @@ def store_brat():
     db_file = os.path.abspath("../test/brat-test-resources/test_project.db" if len(sys.argv) <= 3 else sys.argv[3])
     reset_db = not (False if len(sys.argv) <= 4 else sys.argv[4].lower() in ["false", "f", "no", "n"])
     allow_disp_sent = False if len(sys.argv) <= 5 else sys.argv[5].lower() in ["true", "t", "yes", "y"]
+    drop_annotations = [x.lower() for x in sys.argv[6].split(",")] if len(sys.argv) >= 7 else []
 
     config = ProjectConfiguration(str(project_root))
     input_gen = partial(input_generator, project_root)
@@ -477,7 +481,8 @@ def store_brat():
         db in memory:           {}
         reset db:               {}
         allow disp. sentences:  {}
-        """.format(str(project_root), db_file, in_memory, reset_db, allow_disp_sent))
+        drop annotations:       {}
+        """.format(str(project_root), db_file, in_memory, reset_db, allow_disp_sent, drop_annotations))
 
     time.sleep(2)
 
@@ -493,6 +498,8 @@ def store_brat():
                                     id=layer_id, layer=layer[0].lower())
         for typee in layer[1]:
             typee = typee.lower()
+            if typee in drop_annotations:
+                continue
             type_reference[typee]["layer-id"] = layer_id
             type_reference[typee]["type-id"] = type_id
             data_saver.store_into_table(DefaultTableNames.annotation_types, ignore_duplicates=True,
@@ -500,9 +507,11 @@ def store_brat():
             type_id += 1
     store_brat_in_db(ds=data_saver, annotators={_id: _name.lower() for _id, _name in enumerate(annotators)},
                      documents={_id: "".join(_name.split(".")[:-1]) for _id, _name in enumerate(documents)},
-                     config=config, type_reference=type_reference, allow_disp_sent=allow_disp_sent)
+                     config=config, type_reference=type_reference, allow_disp_sent=allow_disp_sent,
+                     drop_annotations=drop_annotations)
 
 
 if __name__ == '__main__':
     # store_xmi()
     store_brat()
+    # pass
