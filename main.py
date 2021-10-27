@@ -9,6 +9,7 @@ import time
 
 import streamlit as st
 import pandas as pd
+import numpy as np
 from spacy import displacy
 from seaborn import color_palette
 from typing import List, OrderedDict, Union, Dict, Set, Tuple
@@ -47,6 +48,22 @@ def display_sentence_comparison(sel_annotators: list, sent_id: str, doc_id: str,
 def is_entity_categorie(tid):
     return tid in entity_type_ids()
 
+
+@st.cache(hash_funcs={sqlite3.Connection: id})
+def corpus_agreement(annotators, docs, focus_entity, focus_attribute):
+    _score_dict = {}
+    for _comb in itertools.combinations(annotators, 2):
+        _score_dict[_comb] = {}
+        for _doc in docs:
+            ia_entity = instance_agreement(_doc, focus_entity, list(_comb))
+            ta_entity = token_agreement(_doc, focus_entity, list(_comb))
+            ia_event = instance_agreement(_doc, focus_attribute, list(_comb),
+                                          combined_entities=False, combined_attributes=True)
+            ta_event = token_agreement(_doc, focus_attribute, list(_comb),
+                                       combined_entities=False, combined_attributes=True)
+            _score_dict[_comb][_doc] = [ia_entity, ta_entity, ia_event, ta_event]
+    return _score_dict
+            
 
 @st.cache()
 def reversed_layers():
@@ -636,13 +653,28 @@ def main():
                                          value=min(2, len(sel_annotators)))
 
         # ----- DOCUMENT AGREEMENT VISUALIZATION ----- #
-        st.header("Document")
+        st.write("""
+        # Document
+        ({0})
+        """.format(doc_name))
         with st.beta_expander("Complete Document Text"):
             st.text("\n".join([f"{_id}: {s}" for _id, s in sentences_for_document(doc_id).items()]))
 
         # # ----- Visualize Agreement Scores ----- #
         vis_anno = "all" if not use_only_selected_annotators else ", ".join(sel_annotators)
         st.header("Agreement ({})".format(vis_anno))
+        all_agreements = corpus_agreement(annotator_names(),
+                                          [id_for_document(doc) for doc in document_titles()],
+                                          focus_entity,
+                                          focus_attribute)
+        with st.beta_expander("Agreement for the whole corpus and all annotators"):
+            for _k, _v in all_agreements.items():
+                _k
+                _final = [0, 0, 0, 0]
+                for _l in _v.values():
+                    _final = np.add(_final, _l)
+                st.write(np.divide(_final, len(_v)))
+                _final = [0, 0, 0, 0]
         with st.beta_expander("Show Agreement", expanded=True):
             agreement_annotators = sel_annotators if use_only_selected_annotators else annotator_names()
             if len(agreement_annotators) <= 1:

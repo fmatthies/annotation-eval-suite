@@ -13,6 +13,9 @@ from collections.abc import Iterable
 import tqdm
 from cassis import Cas, load_typesystem, load_cas_from_xmi
 
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.dirname(SCRIPT_DIR))
+
 import uima
 from app_constants import database_info, db_construction, layers, DefaultTableNames
 from app_constants.base_config import DatabaseCategories
